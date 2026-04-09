@@ -21,20 +21,14 @@ from smalltalk.kg import (
 )
 from smalltalk.kg_viz import visualize as _kg_visualize
 from smalltalk.palace_cmd import palace_app
-from smalltalk.bootstrap_cmd import run_bootstrap
-from smalltalk.watch_cmd import run_mine_watch
-from smalltalk.hook_cmd import run_install_hook
-from smalltalk.router import route as _route, format_route_results
 
 console = Console()
 
 app = typer.Typer(
     name="smalltalk",
     help=(
-        "PAG — Pre-loaded Augmented Generation for AI agents.\n\n"
-        "Compress .md files to .st format (90% fewer tokens). Palace navigation. "
-        "Closing ritual closes the learn loop. MCP server (18+ tools).\n\n"
-        "Start here: smalltalk bootstrap <dir>"
+        "Compress agent files to Smalltalk .st format. 90% fewer tokens, zero information lost.\n\n"
+        "Palace navigation: structure .st files into wings and rooms for 34%+ better retrieval."
     ),
     add_completion=False,
 )
@@ -94,20 +88,9 @@ def mine(
         False, "--dry-run",
         help="Preview what would be converted without converting",
     ),
-    watch: bool = typer.Option(
-        False, "--watch", "-w",
-        help="Watch for new/modified .md files and auto-convert (Ctrl+C to stop)",
-    ),
-    interval: int = typer.Option(
-        3, "--interval",
-        help="Watch mode polling interval in seconds (default: 3)",
-    ),
 ):
-    """Convert .md files to .st format. Add --watch to auto-convert on file change."""
-    if watch:
-        run_mine_watch(directory, api_key, model, base_url, keep_originals, interval)
-    else:
-        run_mine(directory, api_key, model, base_url, keep_originals, dry_run)
+    """Convert detected .md files to Smalltalk .st format."""
+    run_mine(directory, api_key, model, base_url, keep_originals, dry_run)
 
 
 @app.command()
@@ -122,7 +105,7 @@ def status(
 def instructions(
     command: str = typer.Argument(
         ...,
-        help="Command name: help, init, mine, backup, status, check, wake-up, diary, palace, kg, closing-ritual, bootstrap, route",
+        help="Command name: help, init, mine, backup, status, check, wake-up, diary, palace, kg, closing-ritual",
     ),
 ):
     """Print step-by-step instructions for a command. Designed for agents."""
@@ -314,81 +297,6 @@ def kg_visualize_cmd(
     except Exception as exc:
         console.print(f"[red]ERROR:[/red] {exc}")
         raise typer.Exit(1)
-
-
-# ---------------------------------------------------------------------------
-# New commands: bootstrap, install-hook, route
-# ---------------------------------------------------------------------------
-
-@app.command()
-def bootstrap(
-    directory: Path = typer.Argument(..., help="Directory to bootstrap (skills, _brain, agents)"),
-    api_key: Optional[str] = typer.Option(
-        None, "--api-key", "-k",
-        envvar="OPENROUTER_API_KEY",
-        help="API key for mine step (optional — skips mine if not provided)",
-    ),
-    model: str = typer.Option(
-        "anthropic/claude-haiku-4-5", "--model", "-m",
-        help="Model for conversion",
-    ),
-    base_url: str = typer.Option(
-        "https://openrouter.ai/api/v1", "--base-url",
-        help="OpenAI-compatible API base URL",
-    ),
-    dry_run: bool = typer.Option(
-        False, "--dry-run",
-        help="Preview without making changes",
-    ),
-):
-    """
-    One-command setup: backup → mine → palace init → generate CLAUDE.md.
-
-    Gets a directory fully oriented in one step.
-    Equivalent to running init, backup, mine, palace init, and config generation manually.
-    """
-    run_bootstrap(directory, api_key, model, base_url, dry_run)
-
-
-@app.command(name="install-hook")
-def install_hook(
-    directory: Path = typer.Argument(
-        ".",
-        help="Directory inside the git repo (default: current directory)",
-    ),
-    force: bool = typer.Option(
-        False, "--force",
-        help="Overwrite existing hook files",
-    ),
-):
-    """
-    Install a git post-commit hook that auto-converts staged .md files to .st.
-
-    Finds the nearest .git directory from <directory> and installs the hook.
-    After each commit, any staged .md files are mined automatically.
-    """
-    run_install_hook(directory, force)
-
-
-@app.command()
-def route(
-    directory: Path = typer.Argument(..., help="Directory containing .st files"),
-    task: str = typer.Argument(..., help="Task description to route, e.g. 'build a landing page'"),
-    top: int = typer.Option(5, "--top", "-n", help="Number of files to return"),
-):
-    """
-    Route a task description to the most relevant .st skill/agent files.
-
-    Scores files using both structural (file/dir name) and content-based
-    (SKILL trigger fields, USE when: fields, AGENT capabilities) matching.
-
-    Use this at session start to know which files to load for a given task.
-    """
-    if not directory.exists():
-        console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
-        raise typer.Exit(1)
-    results = _route(directory.resolve(), task, top_n=top)
-    console.print(format_route_results(results, task, directory.resolve()))
 
 
 # ---------------------------------------------------------------------------

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smalltalk-cli"
-version = "3.0.0"
-description = "Compress agent files to Smalltalk .st format. 90% fewer tokens, zero information lost. Palace navigation: wings, rooms, tunnels for 34%+ better retrieval. MCP server with 14 tools."
+version = "3.0.1"
+description = "PAG — Pre-loaded Augmented Generation for AI agents. Compress to .st format. 90% fewer tokens. Palace navigation. MCP server (18 tools). Closing ritual closes the loop."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"

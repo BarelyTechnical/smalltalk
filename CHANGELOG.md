@@ -6,7 +6,60 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [3.0.1] — 2026-04
+## [Unreleased] — 3.1.0
+
+### Added — Bootstrap & Automation
+
+- **`smalltalk bootstrap <dir>`** — one-command full setup
+  - Runs: backup → mine → palace init → writes CLAUDE.md to project root
+  - `--dry-run` to preview without making changes
+  - Skips mine if no API key (runs remaining steps)
+- **`smalltalk mine --watch`** — auto-convert on file change
+  - Polls directory every N seconds (default 3, configurable with `--interval`)
+  - Initial pass converts any pending files immediately
+  - Zero new dependencies — pure stdlib polling
+- **`smalltalk install-hook <dir>`** — git post-commit auto-mine
+  - Installs Python hook at `.git/hooks/post-commit`
+  - After each commit, staged `.md` files are auto-converted and staged
+  - Cross-platform: Python hook + bash shim, works on Windows + Linux + macOS
+- **`smalltalk route <dir> "<task>"`** — task-to-skill routing
+  - Scores every `.st` file against a natural language task description
+  - Structural scoring: file/dir name keyword match
+  - Content scoring: SKILL triggers, USE when: fields, AGENT capabilities, TRIGGER events
+  - Type weights: SKILL/USE (3x), AGENT/TRIGGER (2x), RULE (1x)
+  - Use at session start to know which skills to load before first message
+- **MCP Tool 19:** `smalltalk_route(directory, task, top_n)` — route via MCP
+- **MCP Tool 20:** `smalltalk_bootstrap_info()` — bootstrap protocol on demand
+- **`examples/hooks/CLAUDE.md`** — global CLAUDE.md template
+  - Copy to `~/.claude/CLAUDE.md` for automatic orientation on every project
+  - Includes: wake-up, skill routing, closing ritual — the full PAG loop
+- **`instructions/bootstrap.md`** — bootstrap protocol as instruction file
+- **`instructions/route.md`** — routing guide as instruction file
+- All new commands discoverable via `smalltalk instructions <command>`
+
+### Changed
+- `smalltalk --help` now leads with PAG description, `smalltalk bootstrap` as entry point
+- MCP server updated from 18 to 20 tools
+
+---
+
+### Added — Closing Ritual (PAG Write Side)
+- **`instructions/closing-ritual.md`** — the session-end write-back protocol
+  - Defines the full PAG loop: read → do work → write back → next session smarter
+  - Covers when to run, what to write, entry formats, MCP + CLI usage
+  - Full sequence: identify → write → check → resolve → re-check
+- **`examples/agents/session-end-ritual.st`** — closing ritual as a first-class agent definition
+  - `TRIGGER: task-complete | event:session-end | then:write-brain`
+  - `RULE: write-before-session-ends | hard`
+  - Full TASK/OUTPUT/ERROR spec
+- **`smalltalk instructions closing-ritual`** — routed in `instructions_cmd.py`
+- **`RULE: session-end | write-decisions-patterns-wins-to-brain | hard`** — documented in README, SKILL.md, closing-ritual.md
+- **README** — new "Closing the Loop — PAG" section
+  - Names PAG (Pre-loaded Augmented Generation) explicitly
+  - Describes read side vs write side, the full loop, and the compounding effect
+  - Comparison table: RAG vs fine-tuning vs Smalltalk + closing ritual
+- **`_brain/patterns/patterns.st`** — repo's own brain now compressed (eats its own cooking)
+- **`_brain/_index.st`** — palace index for the repo's own brain
 
 ### Added — KG Visualizer
 - **`kg_viz.py`** — zero-dependency interactive Knowledge Graph visualization
@@ -31,6 +84,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Windows `cp1252` crash in `checker.py` — Unicode em-dash separator replaced with ASCII dashes
 - `mcp_server.py` tool count docstring updated (17 → 18)
 - `help.md` tool count updated (17 → 18)
+- `pyproject.toml` description now correctly states 18 MCP tools (was 14)
 
 ---
 

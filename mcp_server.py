@@ -1,5 +1,5 @@
 """
-Smalltalk MCP Server — 20 tools.
+Smalltalk MCP Server — 18 tools.
 
 Exposes Smalltalk operations to MCP-compatible clients:
 Claude Code, Cursor, Codex, Windsurf, Antigravity, and any tool that speaks MCP.
@@ -592,83 +592,6 @@ def smalltalk_kg_visualize(
         return str(path)
     except Exception as exc:
         return f"ERROR: {exc}"
-
-
-
-# ===========================================================================
-# Skill routing
-# ===========================================================================
-
-@mcp.tool()
-def smalltalk_route(directory: str, task: str, top_n: int = 5) -> str:
-    """
-    Route a task description to the most relevant .st skill/agent files.
-
-    Scores every .st file using both:
-      - Structural matching: file name, directory name keywords
-      - Content matching: SKILL trigger fields, USE when: fields,
-        AGENT capability fields, TRIGGER event fields
-
-    Use this at session start to know which files to load for the current task.
-    More precise than navigate for skill/agent selection — navigate is better
-    for domain navigation (auth, deploy, billing); route is better for
-    task-type matching (build, review, debug, write).
-
-    Args:
-        directory:  Path to .st files (e.g. skills/ or _brain/)
-        task:       Natural language task description
-        top_n:      Number of files to return (default 5)
-
-    Example:
-        smalltalk_route("skills/", "build a landing page for a plumbing company")
-        → ui-designer.st  (SKILL triggers: landing-page+demo-build, score:9)
-        → seo-expert.st   (USE when: any-web-build, score:7)
-        → conversion-copy.st (USE when: demo+cold-outreach, score:5)
-
-    After this call:
-        for each file in results → smalltalk_read_file(path) to load
-    """
-    from smalltalk.router import route as _route, format_route_results
-    d = Path(directory)
-    if not d.exists():
-        return f"ERROR: Directory not found: {directory}"
-    results = _route(d.resolve(), task, top_n=top_n)
-    return format_route_results(results, task, d.resolve())
-
-
-@mcp.tool()
-def smalltalk_bootstrap_info() -> str:
-    """
-    Return the Smalltalk bootstrap protocol — how to set up a new project.
-
-    Use this when first working with a project that hasn't been Smalltalk-oriented yet.
-    Returns the exact commands to run to get fully oriented.
-    """
-    return """\
-Smalltalk Bootstrap Protocol
-
-Run these commands once to get a directory fully oriented:
-
-  1. smalltalk init <dir>          # scan — see what's convertible
-  2. smalltalk backup <dir>        # back up originals
-  3. smalltalk mine <dir>          # convert .md to .st (needs API key)
-  4. smalltalk palace init <dir>   # generate _index.st
-  5. smalltalk install-hook <dir>  # auto-convert on git commit (optional)
-
-One-command equivalent:
-  smalltalk bootstrap <dir> --api-key <key>
-
-After bootstrap:
-  smalltalk wake-up <dir>          # verify — see what the agent will load
-  smalltalk check <dir>            # verify — no contradictions
-
-To add the closing ritual to your agent:
-  Add to CLAUDE.md / GEMINI.md / system prompt:
-    RULE: session-end | write-decisions-patterns-wins-to-brain | hard
-    TRIGGER: task-complete | event:session-end | then:smalltalk_diary_write
-
-Full protocol: smalltalk instructions closing-ritual
-"""
 
 
 # ===========================================================================
