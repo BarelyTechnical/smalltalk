@@ -1,5 +1,7 @@
+import time
 from pathlib import Path
 from typing import Optional
+
 from smalltalk.converter import convert_file, is_convertible, detect_file_type
 from smalltalk.init_cmd import collect_md_files
 from rich.console import Console
@@ -111,3 +113,78 @@ def run_mine(
     console.print()
     console.print("  Run [bold]smalltalk status <dir>[/bold] to see full state.")
     console.print()
+
+
+def run_watch(
+    directory: Path,
+    api_key: Optional[str],
+    model: str,
+    base_url: str,
+    interval: int = 3,
+) -> None:
+    """
+    Watch a directory for new or modified .md files and convert them automatically.
+
+    Polls every `interval` seconds. On each poll:
+      - Converts any .md files that have no .st counterpart.
+      - Re-converts any .md files whose mtime is newer than their .st counterpart.
+
+    Runs until Ctrl+C.
+    """
+    if not directory.exists():
+        console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
+        raise SystemExit(1)
+
+    if not api_key:
+        console.print("[red]ERROR:[/red] No API key found. Set OPENROUTER_API_KEY.")
+        raise SystemExit(1)
+
+    directory = directory.resolve()
+
+    console.print()
+    console.print(f"  [bold]Watching[/bold] {directory}  (every {interval}s — Ctrl+C to stop)")
+    console.print()
+
+    # Initial pass — convert any pending files immediately
+    _watch_pass(directory, api_key, model, base_url)
+
+    try:
+        while True:
+            time.sleep(interval)
+            _watch_pass(directory, api_key, model, base_url)
+    except KeyboardInterrupt:
+        console.print("\n  [dim]Watch stopped.[/dim]\n")
+
+
+def _watch_pass(
+    directory: Path,
+    api_key: str,
+    model: str,
+    base_url: str,
+) -> None:
+    """Single poll — convert stale or missing .st files."""
+    md_files   = collect_md_files(directory)
+    to_convert = []
+
+    for f in md_files:
+        if not is_convertible(f):
+            continue
+        st = f.with_suffix(".st")
+        if not st.exists():
+            to_convert.append(f)          # no .st yet
+        elif f.stat().st_mtime > st.stat().st_mtime:
+            to_convert.append(f)          # .md newer than .st
+
+    if not to_convert:
+        return
+
+    console.print(f"  [dim]{len(to_convert)} file(s) to convert...[/dim]")
+
+    for f in to_convert:
+        try:
+            st_content = convert_file(f, api_key, model, base_url)
+            st_path    = f.with_suffix(".st")
+            st_path.write_text(st_content, encoding="utf-8")
+            console.print(f"  [green]✓[/green] {f.relative_to(directory)}")
+        except Exception as exc:
+            console.print(f"  [red]✗[/red] {f.relative_to(directory)}  {exc}")

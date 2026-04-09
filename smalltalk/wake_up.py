@@ -19,6 +19,10 @@ from smalltalk.parser import parse_st_files
 from smalltalk.kg import is_currently_valid, get_stability
 
 # Types included in wake-up context
+# Excluded intentionally: CLIENT, COMPONENT, PROMPT (reference data — load on demand via REF)
+# Excluded intentionally: SKILL, USE, PHASE, STEP, STACK, CHECK, AVOID (load via route)
+# Excluded intentionally: AGENT, TASK, TRIGGER, OUTPUT, ERROR (operational, not orienting)
+# Result: ~150 tokens of current truth — decisions, hard rules, known patterns, repeatable wins
 WAKE_UP_TYPES = {"DECISION", "RULE", "PATTERN", "WIN"}
 
 

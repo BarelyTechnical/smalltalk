@@ -104,6 +104,9 @@ def _parse_link(entry: dict) -> dict:
     target   = next((f.strip() for f in entry["fields"] if not any(f.startswith(p) for p in _KNOWN_LINK_PREFIXES)), "")
     vf       = next((f[11:].strip() for f in entry["fields"] if f.startswith("valid_from:")), None)
     ended    = next((f[6:].strip()  for f in entry["fields"] if f.startswith("ended:")),      None)
+    # Note: LINK entries default to 'transient' stability — relationships are inherently
+    # time-bound (who works on what, what deploys where). Other entry types (DECISION,
+    # RULE, PATTERN) default to 'stable' via get_stability(). This is intentional.
     stab     = next((f[10:].strip() for f in entry["fields"] if f.startswith("stability:")),  "transient")
     return {
         "source":     entry["subject"],

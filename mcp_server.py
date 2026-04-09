@@ -1,5 +1,5 @@
 """
-Smalltalk MCP Server — 18 tools.
+Smalltalk MCP Server — 20 tools.
 
 Exposes Smalltalk operations to MCP-compatible clients:
 Claude Code, Cursor, Codex, Windsurf, Antigravity, and any tool that speaks MCP.
@@ -35,6 +35,7 @@ from smalltalk.palace import (
     palace_status_text,
 )
 from smalltalk.kg_viz import visualize as _kg_visualize
+from smalltalk.route import route as _route, format_route_results
 
 mcp = FastMCP("smalltalk")
 
@@ -592,6 +593,85 @@ def smalltalk_kg_visualize(
         return str(path)
     except Exception as exc:
         return f"ERROR: {exc}"
+
+
+# ===========================================================================
+# Routing & Bootstrap
+# ===========================================================================
+
+@mcp.tool()
+def smalltalk_route(
+    directory: str,
+    task: str,
+    top_n: int = 5,
+) -> str:
+    """
+    Route a task to the most relevant skill/agent .st files.
+
+    Run at session start — before the first user message — to know which
+    skills and agents to load. Scores files by name and content match.
+    No LLM required.
+
+    HIGH-WEIGHT signals:
+        SKILL entries (3x) — skill definitions and triggers
+        USE entries   (3x) — when-to-use context
+        AGENT entries (2x) — agent capability definitions
+        TRIGGER entries (2x) — event/condition routing
+
+    Args:
+        directory: Path to skills or _brain directory
+        task:      Natural language task description
+        top_n:     Number of top results to return (default 5)
+
+    Example:
+        smalltalk_route("skills/", "build a landing page for a plumbing company", top_n=3)
+        → skills/seo-expert.st       [6.0]
+        → skills/ui-designer.st      [4.5]
+        → skills/conversion-copy.st  [3.0]
+    """
+    d = Path(directory)
+    if not d.exists():
+        return f"ERROR: Directory not found: {directory}"
+    results = _route(d.resolve(), task, top_n=top_n)
+    return format_route_results(results, task)
+
+
+@mcp.tool()
+def smalltalk_bootstrap_info() -> str:
+    """
+    Return the bootstrap protocol for setting up Smalltalk on a new project.
+
+    Run this when a project has no _brain/ or .st files yet.
+    Returns the exact CLI commands to run in sequence.
+
+    The bootstrap sequence:
+      1. backup     — copy .md originals to .originals/ (safe fallback)
+      2. mine       — convert .md files to .st format (requires API key)
+      3. palace init — generate _index.st (palace navigation map)
+      4. CLAUDE.md  — write global session hook to project root
+
+    After bootstrap, copy CLAUDE.md to ~/.claude/CLAUDE.md for automatic
+    orientation on every project, not just this one.
+    """
+    return (
+        "Smalltalk Bootstrap Protocol\n"
+        "============================\n\n"
+        "One-command setup (recommended):\n"
+        "  smalltalk bootstrap <_brain/> --api-key <key>\n"
+        "  smalltalk bootstrap <_brain/> --dry-run   # preview first\n"
+        "  smalltalk bootstrap <_brain/>              # skips mine if no key\n\n"
+        "Or step by step:\n"
+        "  1. smalltalk backup  <dir>    # backup .md originals\n"
+        "  2. smalltalk mine    <dir>    # convert .md → .st\n"
+        "  3. smalltalk palace init <dir> # generate _index.st\n"
+        "  4. smalltalk wake-up <dir>    # verify context loads\n"
+        "  5. smalltalk check   <dir>    # verify no contradictions\n\n"
+        "After setup:\n"
+        "  Copy CLAUDE.md to ~/.claude/CLAUDE.md — global orientation hook.\n"
+        "  Register MCP: claude mcp add smalltalk -- \"python -m smalltalk.mcp_server\"\n\n"
+        "Local Ollama (free, no API key):\n"
+        "  smalltalk bootstrap <dir> --base-url http://localhost:11434/v1 --api-key ollama\n"
+    )
 
 
 # ===========================================================================

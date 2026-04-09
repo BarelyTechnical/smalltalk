@@ -2,9 +2,10 @@ import typer
 from pathlib import Path
 from typing import Optional
 from rich.console import Console
+
 from smalltalk.init_cmd import run_init
 from smalltalk.backup import run_backup
-from smalltalk.mine import run_mine
+from smalltalk.mine import run_mine, run_watch
 from smalltalk.status import run_status
 from smalltalk.instructions_cmd import run_instructions
 from smalltalk.wake_up import build_wake_up_context
@@ -21,14 +22,20 @@ from smalltalk.kg import (
 )
 from smalltalk.kg_viz import visualize as _kg_visualize
 from smalltalk.palace_cmd import palace_app
+from smalltalk.route import route as _route, format_route_results
+from smalltalk.bootstrap_cmd import run_bootstrap
+from smalltalk.hook_cmd import run_install_hook
 
 console = Console()
 
 app = typer.Typer(
     name="smalltalk",
     help=(
-        "Compress agent files to Smalltalk .st format. 90% fewer tokens, zero information lost.\n\n"
-        "Palace navigation: structure .st files into wings and rooms for 34%+ better retrieval."
+        "Smalltalk — institutional memory for AI agents.\n\n"
+        "The agent doesn't know your history. Smalltalk changes that.\n\n"
+        "Quick start:  smalltalk bootstrap <_brain/>\n"
+        "Check first:  smalltalk check <_brain/>   ← detects decision contradictions\n"
+        "Load context: smalltalk wake-up <_brain/>"
     ),
     add_completion=False,
 )
@@ -39,6 +46,98 @@ diary_app = typer.Typer(help="Specialist agent diary commands.")
 app.add_typer(kg_app,    name="kg")
 app.add_typer(diary_app, name="diary")
 app.add_typer(palace_app, name="palace")
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap — one-command full setup
+# ---------------------------------------------------------------------------
+
+@app.command()
+def bootstrap(
+    directory: Path = typer.Argument(..., help="Directory to set up (_brain/ or project root)"),
+    api_key: Optional[str] = typer.Option(
+        None, "--api-key", "-k",
+        envvar="OPENROUTER_API_KEY",
+        help="API key for mine step (OpenRouter by default)",
+    ),
+    model: str = typer.Option(
+        "anthropic/claude-haiku-4-5",
+        "--model", "-m",
+        help="Model to use for .md → .st conversion",
+    ),
+    base_url: str = typer.Option(
+        "https://openrouter.ai/api/v1",
+        "--base-url",
+        help="OpenAI-compatible API base URL",
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run",
+        help="Preview steps without making changes",
+    ),
+):
+    """
+    One-command setup: backup → mine → palace init → write CLAUDE.md.
+
+    The fastest way to orient a new project. Run once, then use wake-up and check
+    at every session start. Mine step is skipped if no API key is provided.
+    """
+    run_bootstrap(directory, api_key, model, base_url, dry_run)
+
+
+# ---------------------------------------------------------------------------
+# Route — task-to-skill routing
+# ---------------------------------------------------------------------------
+
+@app.command()
+def route(
+    directory: Path = typer.Argument(..., help="Directory containing .st files (skills/, _brain/, etc.)"),
+    task: str       = typer.Argument(..., help="Natural language task description"),
+    top: int        = typer.Option(5, "--top", "-n", help="Number of results to return"),
+):
+    """
+    Find the most relevant skill/agent files for a task.
+
+    Run at session start before the first message to know which skills to load.
+    Scores by file name match and entry content — no LLM required.
+
+    Example:
+        smalltalk route skills/ "build a landing page for a plumbing company"
+        → skills/seo-expert.st       [score: 6.0]
+        → skills/ui-designer.st      [score: 4.5]
+        → skills/conversion-copy.st  [score: 3.0]
+    """
+    if not directory.exists():
+        console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
+        raise typer.Exit(1)
+
+    results = _route(directory.resolve(), task, top_n=top)
+    console.print(format_route_results(results, task))
+
+
+# ---------------------------------------------------------------------------
+# Install-hook — git post-commit auto-mine
+# ---------------------------------------------------------------------------
+
+@app.command(name="install-hook")
+def install_hook(
+    project_dir: Path = typer.Argument(
+        ..., help="Root of the git repository (must contain .git/)"
+    ),
+    force: bool = typer.Option(
+        False, "--force", "-f",
+        help="Overwrite an existing post-commit hook",
+    ),
+):
+    """
+    Install a git post-commit hook that auto-mines staged .md files.
+
+    After each commit, the hook converts any .md files in the commit to .st
+    format and stages the results. Requires OPENROUTER_API_KEY in your shell
+    environment. Without it the hook exits cleanly — commits are never blocked.
+
+    Uninstall: delete .git/hooks/post-commit
+    """
+    run_install_hook(project_dir, force)
 
 
 # ---------------------------------------------------------------------------
@@ -88,9 +187,25 @@ def mine(
         False, "--dry-run",
         help="Preview what would be converted without converting",
     ),
+    watch: bool = typer.Option(
+        False, "--watch", "-w",
+        help="Watch directory and auto-convert on file change (Ctrl+C to stop)",
+    ),
+    interval: int = typer.Option(
+        3, "--interval",
+        help="Watch poll interval in seconds (default 3)",
+    ),
 ):
-    """Convert detected .md files to Smalltalk .st format."""
-    run_mine(directory, api_key, model, base_url, keep_originals, dry_run)
+    """
+    Convert detected .md files to Smalltalk .st format.
+
+    Use --watch to auto-convert whenever a .md file is saved.
+    Use --dry-run to preview without making changes.
+    """
+    if watch:
+        run_watch(directory, api_key, model, base_url, interval)
+    else:
+        run_mine(directory, api_key, model, base_url, keep_originals, dry_run)
 
 
 @app.command()
@@ -105,7 +220,10 @@ def status(
 def instructions(
     command: str = typer.Argument(
         ...,
-        help="Command name: help, init, mine, backup, status, check, wake-up, diary, palace, kg, closing-ritual",
+        help=(
+            "Command name: help, init, mine, backup, status, check, wake-up, "
+            "diary, palace, kg, closing-ritual, bootstrap, route"
+        ),
     ),
 ):
     """Print step-by-step instructions for a command. Designed for agents."""
@@ -139,9 +257,12 @@ def check(
     """
     Detect contradictions across .st files.
 
-    Flags: DECISION conflicts, RULE strength mismatches,
-    PATTERN conflicting fixes, WIN repeat disagreements.
-    Rules-based — no LLM required.
+    Flags conflicting DECISION entries, RULE strength mismatches,
+    PATTERN conflicting fixes, WIN repeat disagreements, and LINK
+    exclusivity violations. Rules-based — no LLM required.
+
+    Run this before any deployment or production push. Agents running
+    via MCP can resolve contradictions autonomously using kg invalidate.
     """
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
@@ -209,9 +330,7 @@ def kg_query_cmd(
     entity:    str  = typer.Argument(..., help="Entity to query, e.g. 'kai' or 'auth'"),
     as_of:     str  = typer.Option("", "--as-of", help="YYYY-MM — point-in-time query"),
 ):
-    """
-    Query the knowledge graph for an entity — relationships, active and historical.
-    """
+    """Query the knowledge graph for an entity — relationships, active and historical."""
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
         raise typer.Exit(1)
@@ -224,9 +343,7 @@ def kg_timeline_cmd(
     directory: Path = typer.Argument(..., help="Directory containing .st files"),
     entity:    str  = typer.Argument(..., help="Entity to trace chronologically"),
 ):
-    """
-    Show the chronological story of an entity via LINK entries.
-    """
+    """Show the chronological story of an entity via LINK entries."""
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
         raise typer.Exit(1)
@@ -247,7 +364,6 @@ def kg_invalidate_cmd(
     This is the resolution step after `smalltalk check` flags a contradiction.
 
     Workflow:
-
       1. smalltalk check <dir>              # see contradictions + file/line
       2. smalltalk kg invalidate <file> <line_no>   # close the older entry
       3. smalltalk check <dir>              # confirm cleared

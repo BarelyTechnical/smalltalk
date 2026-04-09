@@ -6,7 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased] — 3.1.0
+## [3.1.0] — 2026-04
+
+### Added — Narrative & Positioning
+- **Institutional memory framing** — README hero rewritten from compression → institutional memory
+- **Managed Agents context** — README opens with the gap that platform orchestration doesn't fill
+- **Contradiction Detection elevated** — section 2 in README, tool #1 in MCP table, enterprise framing added
+- **Closing Loop elevated** — section 3, compounding intelligence story front and centre
+- **Local Model Case** — new section in README + `docs/local-model-philosophy.md`
+  - Core thesis: context is the bottleneck, not intelligence
+  - "Intelligence is contextual, not absolute"
+  - Table: which small model failure modes each .st entry type directly fixes
+  - Two buyer conversations: enterprise (institutional memory) vs local-first (cost + air-gap)
+  - Practical Ollama setup — full local pipeline with zero cloud dependency
+- **Hero updated** — "Institutional memory for AI agents. Cloud or local."
+
 
 ### Added — Bootstrap & Automation
 

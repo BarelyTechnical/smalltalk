@@ -31,10 +31,11 @@ console = Console()
 app = typer.Typer(
     name="smalltalk",
     help=(
-        "PAG — Pre-loaded Augmented Generation for AI agents.\n\n"
-        "Compress .md files to .st format (90% fewer tokens). Palace navigation. "
-        "Closing ritual closes the learn loop. MCP server (18+ tools).\n\n"
-        "Start here: smalltalk bootstrap <dir>"
+        "Smalltalk — institutional memory for AI agents.\n\n"
+        "The agent doesn't know your history. Smalltalk changes that.\n\n"
+        "Start here:   smalltalk bootstrap <dir>\n"
+        "Check first:  smalltalk check <dir>   ← catches contradictions before agents act\n"
+        "Load context: smalltalk wake-up <dir>"
     ),
     add_completion=False,
 )
@@ -154,11 +155,25 @@ def check(
     directory: Path = typer.Argument(..., help="Directory to check for contradictions"),
 ):
     """
-    Detect contradictions across .st files.
+    Detect contradictions across .st files. Run this before any agent acts.
 
-    Flags: DECISION conflicts, RULE strength mismatches,
-    PATTERN conflicting fixes, WIN repeat disagreements.
+    When an agent reads conflicting facts — two active DECISION entries pointing
+    to different deploy targets, a RULE flagged hard in one file and soft in
+    another — it picks one arbitrarily. Smalltalk catches this before it acts.
+
+    Detects:
+        DECISION  — same subject, diverging active choices
+        RULE      — same id, hard in one file / soft in another
+        PATTERN   — same cause, conflicting fixes
+        WIN       — same subject, repeat:y vs repeat:n
+        LINK      — exclusive relationships pointing to multiple active targets
+
     Rules-based — no LLM required.
+
+    Resolution cycle:
+        1. smalltalk check <dir>             ← see contradictions + file/line
+        2. smalltalk kg invalidate <f> <n>   ← close the older entry
+        3. smalltalk check <dir>             ← confirm cleared
     """
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
