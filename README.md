@@ -9,7 +9,7 @@ So it greps. It loads files and reads them to figure out what they mean. It gues
 > [!IMPORTANT]
 > Smalltalk changes this. It shifts the cognitive posture from **reactive** to **oriented**.
 
-An oriented agent already knows your stack decisions, your brand rules, your current deployments, your failure patterns, and which skill to invoke for each task type — before the first token of user input.
+An oriented agent already knows your stack decisions, your brand rules, your current deployments, your failure patterns, and which skill to invoke for each task type. Before the first token of user input.
 
 ---
 
@@ -21,7 +21,7 @@ Smalltalk is built on four components:
 A typed, pipe-delimited, one-line-per-entry format. `DECISION`, `RULE`, `PATTERN`, `SKILL`, `AGENT`, `LINK`. Each type carries semantic meaning that any LLM reads without a decoder. A 200-line skill file becomes 20 lines. A full `_brain/` in prose becomes a few hundred tokens of structured, queryable facts.
 
 **Knowledge Graph**
-A temporal entity-relationship graph built entirely from `.st` files. No database. No vector store. The KG maps who works on what, what depends on what, what changed and when. The model reads it — it doesn't discover it.
+A temporal entity-relationship graph built entirely from `.st` files. No database. No vector store. The KG maps who works on what, what depends on what, what changed and when. The model reads it. It doesn't discover it.
 
 **The Palace**
 A wing/room/tunnel navigation layer. Instead of scanning everything flat, the agent navigates to what's relevant. `_index.st` is the map. `navigate()` is the route. The model goes directly. It doesn't search.
@@ -35,7 +35,7 @@ A Python CLI and MCP server exposing 18 tools. Integrates with Claude Code, Curs
 
 | Without Smalltalk | With Smalltalk |
 |---|---|
-| grep / search to find context | palace navigate — direct retrieval |
+| grep / search to find context | palace navigate (direct retrieval) |
 | infer which tool or skill to use | `SKILL` + `USE` entries declare it |
 | rediscover current state every session | `wake-up` delivers it in ~150 tokens |
 | relitigate past decisions | `DECISION` entries carry them forward |
@@ -124,7 +124,7 @@ TYPE: identifier | field | field | field
 2. **Mobile-First**: Start with mobile styles, layer up with responsive
    variants. Never desktop-first.
 3. **No Dynamic Classes**: Avoid dynamically constructed Tailwind class
-   names — they get purged at build time.
+   names. They get purged at build time.
 ```
 
 **After (Smalltalk, 3 lines, same rules)**
@@ -139,10 +139,10 @@ RULE: ui-skill | no-dynamic-class-names | hard
 
 `.st` files unlock a loading pattern that keeps session cost low without losing depth:
 
-**Tier 1 — Session start (always, cheap)**
+**Tier 1: Session start (always, cheap)**
 Agent loads `.st` files. Full orientation context in ~180 tokens instead of ~1,800.
 
-**Tier 2 — On demand (targeted)**
+**Tier 2: On demand (targeted)**
 When depth is needed, agent reads the original `.md` via its `REF` link:
 
 ```st
@@ -156,7 +156,7 @@ REF: ui-skill | references/components.st | covers:component-catalog
 
 ## Memory System
 
-Facts are stored as typed entries — not raw conversation logs. Structured, queryable, temporally-aware records.
+Facts are stored as typed entries, not raw conversation logs. Structured, queryable, temporally-aware records.
 
 ```st
 DECISION: deploy | railway>vercel | scale | 2026-04
@@ -229,7 +229,7 @@ DECISION: auth | clerk>auth0 | easier-sdk | 2026-01 | stability:stable
 DECISION: auth | auth0>clerk | legacy     | ended:2026-01
 ```
 
-The second entry has `ended:` — the checker ignores it. `wake-up` skips it.
+The second entry has `ended:`. The checker ignores it. `wake-up` skips it.
 
 ### Querying
 
@@ -260,7 +260,7 @@ smalltalk kg visualize _brain/
 
 ## Palace Navigation
 
-The palace structures your `.st` files into wings, rooms, and tunnels. Agents navigate — they don't scan.
+The palace structures your `.st` files into wings, rooms, and tunnels. Agents navigate. They don't scan.
 
 ```
 _brain/
@@ -347,7 +347,7 @@ smalltalk check _brain/
 # OK  No active contradictions detected.
 ```
 
-Agents running via MCP can do this autonomously — detect the conflict, call `smalltalk_kg_invalidate`, confirm clearance.
+Agents running via MCP can do this autonomously. They detect the conflict, call `smalltalk_kg_invalidate`, and confirm clearance.
 
 ---
 
@@ -572,7 +572,7 @@ Full reference with examples: [`spec/grammar.md`](spec/grammar.md)
 - `rich>=10.11.0`
 - `mcp>=1.0.0`
 
-API key only needed for `mine`. Anything OpenAI-compatible works — including local Ollama (free). Reading `.st` files needs nothing beyond the agent and the file.
+API key only needed for `mine`. Anything OpenAI-compatible works, including local Ollama (free). Reading `.st` files needs nothing beyond the agent and the file.
 
 ```bash
 pip install smalltalk-cli
@@ -652,7 +652,7 @@ When you compress into typed entries, you preserve:
 | Time | When did this become true? When did it stop? |
 | Severity | Hard rule or soft preference? |
 
-This is what the AAAK dialect first demonstrated: LLMs understand typed compressed shorthand without a decoder. `DECISION: deploy | railway>vercel | scale | 2026-04` is read as fluently as prose — at one-tenth the token cost.
+This is what the AAAK dialect first demonstrated: LLMs understand typed compressed shorthand without a decoder. `DECISION: deploy | railway>vercel | scale | 2026-04` is read as fluently as prose, at one-tenth the token cost.
 
 ### The Compounding Advantage
 
@@ -680,7 +680,7 @@ With `content-strategist-pro.st` loaded, the user writes:
 
 > *"Write content for this automation project."*
 
-The model already read the RULE, AVOID, PHASE, and USE entries. The entire methodology — the psychology, the sequencing, the anti-patterns — is pre-loaded. The user speaks naturally. The system has the playbook.
+The model already read the RULE, AVOID, PHASE, and USE entries. The entire methodology (the psychology, the sequencing, the anti-patterns) is pre-loaded. The user speaks naturally. The system has the playbook.
 
 The knowledge is in the files. The files load at session start. The session starts oriented.
 
@@ -697,7 +697,7 @@ Every session, the brain compounds:
 
 When something becomes outdated: `check` detects the contradiction, `kg invalidate` writes `ended:`, and `wake-up` stops loading it. No cleanup. No manual pruning. The past is preserved. The present stays clean.
 
-Six months in, you have a brain that knows your entire domain history — what was tried, what worked, what was decided, what changed, and why. `wake-up` surfaces only what's currently true.
+Six months in, you have a brain that knows your entire domain history: what was tried, what worked, what was decided, what changed, and why. `wake-up` surfaces only what's currently true.
 
 > **The goal: a system that gets more useful the longer you use it, without getting heavier.**
 
@@ -707,7 +707,7 @@ Six months in, you have a brain that knows your entire domain history — what w
 
 Smalltalk is a direct evolution of the **AAAK dialect** from [MemPalace](https://github.com/MemPalace/mempalace).
 
-**MemPalace** pioneered the insight that LLMs can read structured compressed text natively — no fine-tuning, no decoder, no special API. The AAAK shorthand proved that a model given `DECISION: auth | clerk>auth0 | easier-sdk | 2026-01` understands the fact as well as a paragraph, at 90% fewer tokens. MemPalace also introduced the Palace metaphor — rooms, wings, halls — as a navigation layer for compressed agent memory.
+**MemPalace** pioneered the insight that LLMs can read structured compressed text natively. No fine-tuning, no decoder, no special API. The AAAK shorthand proved that a model given `DECISION: auth | clerk>auth0 | easier-sdk | 2026-01` understands the fact as well as a paragraph, at 90% fewer tokens. MemPalace also introduced the Palace metaphor (rooms, wings, halls) as a navigation layer for compressed agent memory.
 
 Smalltalk v3 extends this foundation with:
 - A formal, versioned grammar spec covering all agent file types
