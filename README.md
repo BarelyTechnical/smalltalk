@@ -9,13 +9,17 @@ So the model greps. It loads files and reads them to figure out what they mean. 
 > [!IMPORTANT]
 > Smalltalk changes the cognitive posture from **reactive to oriented**.
 
-**The Grammar** — A typed, pipe-delimited, one-line-per-entry format. Every LLM understands it without a decoder or fine-tuning. `DECISION`, `RULE`, `PATTERN`, `SKILL`, `AGENT`, `LINK` — each type carries meaning the model can act on immediately. A 200-line skill file becomes 20 lines. A `_brain/` full of prose becomes one line per queryable fact.
+**The Grammar**
+A typed, pipe-delimited, one-line-per-entry format. Every LLM understands it without a decoder or fine-tuning. `DECISION`, `RULE`, `PATTERN`, `SKILL`, `AGENT`, `LINK`: each type carries meaning the model can act on immediately. A 200-line skill file becomes 20 lines. A `_brain/` full of prose becomes one line per queryable fact.
 
-**The Knowledge Graph** — A temporal entity-relationship graph built from `.st` files. No database. No vector store. The model knows who works on what, what depends on what, what changed and when. It doesn't discover this — it reads it.
+**The Knowledge Graph**
+A temporal entity-relationship graph built from `.st` files. No database. No vector store. The model knows who works on what, what depends on what, what changed and when. It doesn't discover this. It reads it.
 
-**The Palace** — A wing/room/tunnel navigation layer. Instead of scanning everything flat, agents navigate to what's relevant. `_index.st` is the map. `navigate()` is the route. The model doesn't search — it goes directly.
+**The Palace**
+A wing/room/tunnel navigation layer. Instead of scanning everything flat, agents navigate to what's relevant. `_index.st` is the map. `navigate()` is the route. The model doesn't search. It goes directly.
 
-**The Tooling** — A Python CLI and MCP server (18 tools) that plug into Claude Code, Cursor, Antigravity, and any MCP-compatible client.
+**The Tooling**
+A Python CLI and MCP server (18 tools) that plug into Claude Code, Cursor, Antigravity, and any MCP-compatible client.
 
 ***
 
@@ -37,7 +41,7 @@ So the model greps. It loads files and reads them to figure out what they mean. 
 
 | | | | | |
 |---|---|---|---|---|
-| **~20 lines** per skill (was ~200) | **~90% token reduction** on session start | **Any LLM** no decoder needed | **$0** local, no subscription | **Compounds** — gets smarter every session |
+| **~20 lines** per skill (was ~200) | **~90% token reduction** on session start | **Any LLM** no decoder needed | **$0** local, no subscription | **Compounds:** gets smarter every session |
 
 ---
 
@@ -67,7 +71,7 @@ smalltalk mine ~/Dev/skills \
   --base-url https://api.anthropic.com/v1 \
   --api-key YOUR_KEY
 
-# Local Ollama — no API cost
+# Local Ollama (no API cost)
 smalltalk mine ~/Dev/skills \
   --base-url http://localhost:11434/v1 \
   --api-key ollama \
@@ -77,7 +81,7 @@ smalltalk mine ~/Dev/skills \
 Then tell your agents to load `.st` files. Add this ONE line to your `CLAUDE.md`, `GEMINI.md`, or system prompt:
 
 > [!TIP]
-> Read `.st` files before `.md` files. `.st` is the Smalltalk compressed format — load as session context. Load `.md` references only when a specific topic requires deep detail.
+> Read `.st` files before `.md` files. `.st` is the Smalltalk compressed format. Load this as session context. Load `.md` references only when a specific topic requires deep detail.
 
 ---
 
@@ -89,14 +93,14 @@ Every Smalltalk entry follows one pattern:
 TYPE: identifier | field | field | field
 ```
 
-- `TYPE` — uppercase prefix defining the entry category
-- `identifier` — the skill, agent, or subject this entry belongs to
-- `fields` — pipe-delimited, as short as unambiguous
-- `+` — multiple values in one field: `when:next+vite+remix`
-- `:` — key-value: `broke:vite-build`
-- `>` — choice over alternative: `cloudflare>vercel`
+- `TYPE`: uppercase prefix defining the entry category
+- `identifier`: the skill, agent, or subject this entry belongs to
+- `fields`: pipe-delimited, as short as unambiguous
+- `+`: multiple values in one field (`when:next+vite+remix`)
+- `:`: key-value (`broke:vite-build`)
+- `>`: choice over alternative (`cloudflare>vercel`)
 
-**Before — markdown (7 lines for 3 rules):**
+**Before (markdown, 7 lines for 3 rules)**
 
 ```markdown
 ## Best Practices
@@ -109,7 +113,7 @@ TYPE: identifier | field | field | field
    names — they get purged at build time.
 ```
 
-**After — Smalltalk (3 lines, same rules):**
+**After (Smalltalk, 3 lines, same rules)**
 
 ```
 RULE: ui-skill | compose-from-primitives-not-monoliths | hard
@@ -121,7 +125,7 @@ RULE: ui-skill | no-dynamic-class-names | hard
 
 `.st` files enable a retrieval pattern that keeps session costs low without losing depth:
 
-1. **Tier 1 — Session start (always loaded, cheap):**
+1. **Tier 1 (Session start):**
    Agent loads `.st` files. Full orientation context in ~180 tokens instead of ~1,800.
 
 2. **Tier 2 — On demand (targeted):**
@@ -160,7 +164,7 @@ smalltalk wake-up ~/Dev/_brain/
 > Outputs ~150 tokens. Includes active `DECISION` entries, `hard` `RULE` entries, active `PATTERN` entries, and `repeat:y` `WIN` entries. **Historical entries with `ended:` are excluded.** Permanent entries always appear first.
 
 ```st
-# Smalltalk wake-up — 4 current entries
+# Smalltalk wake-up: 4 current entries
 
 # permanent (core truth)
 RULE: brand | never-change-without-legal-review | hard | stability:permanent
@@ -254,7 +258,7 @@ The palace structures your `.st` files into wings, rooms, and tunnels. Instead o
 
 ```
 _brain/
-├── _index.st             ← palace map — generated automatically
+├── _index.st             ← palace map (generated automatically)
 ├── decisions.st          ← wing: decisions, hall:DECISION
 ├── patterns.st           ← wing: patterns, hall:PATTERN+WIN
 └── projects/
@@ -346,30 +350,30 @@ smalltalk check _brain/
 # → OK  No active contradictions detected.
 ```
 
-Agents running via MCP can do this autonomously — read the conflict, call `smalltalk_kg_invalidate` with the file + line, confirm clearance.
+Agents running via MCP can do this autonomously. They read the conflict, call `smalltalk_kg_invalidate` with the file and line, and confirm clearance.
 
 ---
 
 ## CLI Reference
 
 ```bash
-# Scan — see what's convertible before touching anything
+# Scan: see what's convertible before touching anything
 smalltalk init <dir>
 
-# Back up — copy all .md originals to .originals/ preserving structure
+# Back up: copy all .md originals to .originals/ preserving structure
 smalltalk backup <dir>
 
-# Convert — produce .st files for all convertible .md files
+# Convert: produce .st files for all convertible .md files
 smalltalk mine <dir>
 smalltalk mine <dir> --dry-run                            # preview without writing
 smalltalk mine <dir> --no-keep-originals                  # remove .md after conversion
 smalltalk mine <dir> --model openai/gpt-4o-mini           # swap model
 smalltalk mine <dir> --base-url http://localhost:11434/v1  # use local Ollama
 
-# Status — conversion progress with per-file reduction stats
+# Status: conversion progress with per-file reduction stats
 smalltalk status <dir>
 
-# Wake-up — extract L1 context for system prompt injection
+# Wake-up: extract L1 context for system prompt injection
 smalltalk wake-up <dir>
 
 # Contradiction detection
@@ -393,7 +397,7 @@ smalltalk palace status <dir>    # show wings, rooms, tunnels
 smalltalk diary write <agent-id> <entry>   # append to diary
 smalltalk diary read <agent-id>            # read all entries
 
-# Instructions — full step-by-step guide for agents
+# Instructions (full step-by-step guide for agents)
 smalltalk instructions help
 smalltalk instructions mine
 smalltalk instructions kg
@@ -409,7 +413,7 @@ OPENROUTER_API_KEY    # default — no need to pass --api-key every time
 
 ### Windows
 
-Use full paths — tilde expansion doesn't work in PowerShell:
+Use full paths. Tilde expansion doesn't work in PowerShell:
 
 ```powershell
 smalltalk init C:\Users\yourname\Dev\skills
@@ -540,21 +544,21 @@ Full reference with examples: `spec/grammar.md`
 |---|---|
 | `smalltalk/cli.py` | CLI entry point |
 | `smalltalk/converter.py` | File type detection + LLM conversion |
-| `smalltalk/init_cmd.py` | `init` — directory scan |
-| `smalltalk/backup.py` | `backup` — copy originals to `.originals/` |
-| `smalltalk/mine.py` | `mine` — convert files to `.st` |
-| `smalltalk/status.py` | `status` — conversion progress |
-| `smalltalk/wake_up.py` | `wake-up` — L1 context builder |
-| `smalltalk/checker.py` | `check` — contradiction detection (flat + KG) |
-| `smalltalk/kg.py` | Knowledge Graph — build, query, timeline, invalidate |
-| `smalltalk/kg_viz.py` | KG visualization — generates interactive HTML via vis.js |
-| `smalltalk/palace.py` | Palace navigation — `_index.st`, navigate, score |
+| `smalltalk/init_cmd.py` | `init`: directory scan |
+| `smalltalk/backup.py` | `backup`: copy originals to `.originals/` |
+| `smalltalk/mine.py` | `mine`: convert files to `.st` |
+| `smalltalk/status.py` | `status`: conversion progress |
+| `smalltalk/wake_up.py` | `wake-up`: L1 context builder |
+| `smalltalk/checker.py` | `check`: contradiction detection (flat + KG) |
+| `smalltalk/kg.py` | Knowledge Graph: build, query, timeline, invalidate |
+| `smalltalk/kg_viz.py` | KG visualization: generates interactive HTML via vis.js |
+| `smalltalk/palace.py` | Palace navigation: `_index.st`, navigate, score |
 | `smalltalk/palace_cmd.py` | `palace` CLI subcommands |
 | `smalltalk/diary.py` | Agent diary at `~/.smalltalk/diaries/` |
 | `smalltalk/searcher.py` | Keyword search across .st files |
 | `smalltalk/parser.py` | Core regex parser for .st files |
-| `smalltalk/mcp_server.py` | MCP server — 18 tools |
-| `smalltalk/instructions_cmd.py` | `instructions` — serve instruction files to agents |
+| `smalltalk/mcp_server.py` | MCP server (18 tools) |
+| `smalltalk/instructions_cmd.py` | `instructions`: serve instruction files to agents |
 | `smalltalk/instructions/` | Per-command instruction files |
 | `spec/grammar.md` | Canonical type reference |
 | `spec/compression-guide.md` | Manual conversion guide + LLM prompt |
@@ -562,8 +566,8 @@ Full reference with examples: `spec/grammar.md`
 | `examples/skills/` | Compressed skill examples |
 | `examples/memory/` | Memory log examples |
 | `examples/agents/` | Agent definition examples (incl. content-strategist-pro) |
-| `examples/knowledge-graph/` | KG examples — team, solopreneur, contradiction resolution |
-| `tests/` | Pytest suite — 93 tests across parser, KG, checker, palace, wake-up |
+| `examples/knowledge-graph/` | KG examples: team, solopreneur, contradiction resolution |
+| `tests/` | Pytest suite: 93 tests across parser, KG, checker, palace, wake-up |
 | `.claude-plugin/` | Claude Code plugin |
 | `.codex-plugin/` | Codex plugin |
 
@@ -694,10 +698,10 @@ The knowledge is in the files. The files load at session start. The session star
 This is the property that makes Smalltalk compound over time rather than go stale.
 
 After every session:
-- A decision that was debated gets written as `DECISION` — it's settled from here forward
-- An error that was solved gets logged as `PATTERN` — it won't happen again
-- A technique that worked gets captured as `WIN` — the model surfaces it next time it's relevant
-- A new entity relationship gets linked via `LINK` — the KG expands
+- A decision that was debated gets written as `DECISION`: it's settled from here forward
+- An error that was solved gets logged as `PATTERN`: it won't happen again
+- A technique that worked gets captured as `WIN`: the model surfaces it next time it's relevant
+- A new entity relationship gets linked via `LINK`: the KG expands
 
 When something changes:
 - `smalltalk check` detects the contradiction
