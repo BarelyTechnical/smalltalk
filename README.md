@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/smalltalk-dark.svg">
+  <img src="docs/smalltalk-light.svg" alt="smalltalk" width="400">
+</picture>
+
 # Smalltalk
 
 **PAG — Pre-loaded Augmented Generation.**
