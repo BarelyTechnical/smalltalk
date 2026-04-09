@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smalltalk-cli"
+version = "3.0.0"
+description = "Compress agent files to Smalltalk .st format. 90% fewer tokens, zero information lost. Palace navigation: wings, rooms, tunnels for 34%+ better retrieval. MCP server with 14 tools."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "typer>=0.9.0",
+    "httpx>=0.27.0",
+    "rich>=10.11.0",
+    "mcp>=1.0.0",
+]
+
+[project.scripts]
+smalltalk = "smalltalk.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["smalltalk*"]
+
+[tool.setuptools.package-data]
+smalltalk = ["instructions/*.md"]

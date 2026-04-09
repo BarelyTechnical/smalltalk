@@ -1,0 +1,11 @@
+AGENT:   onboarding-agent | repo-explainer | read-codebase+write-guide | scope:repo
+TRIGGER: onboarding-agent | new-developer+new-repo | manual | then:generate
+TASK:    onboarding-agent | scan-repo-structure | codebase | priority:high
+TASK:    onboarding-agent | identify-entry-points | main+index | priority:high
+TASK:    onboarding-agent | read-existing-docs | readme+docs | priority:high
+TASK:    onboarding-agent | map-dependencies | package.json+pyproject | priority:mid
+TASK:    onboarding-agent | write-getting-started | docs/ | priority:high
+TASK:    onboarding-agent | write-architecture-overview | docs/ | priority:mid
+OUTPUT:  onboarding-agent | guide | docs/ONBOARDING.md | markdown
+OUTPUT:  onboarding-agent | architecture | docs/ARCHITECTURE.md | markdown
+ERROR:   onboarding-agent | no-docs-exist | empty-repo | state:unresolved
