@@ -1,13 +1,15 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/smalltalk-dark.svg">
-  <img src="docs/smalltalk-light.svg" alt="smalltalk" width="400">
-</picture>
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/smalltalk-dark.svg">
+    <img src="docs/smalltalk-light.svg" alt="smalltalk" width="400">
+  </picture>
 
-# Smalltalk
+  # Smalltalk
 
-**PAG — Pre-loaded Augmented Generation.**
+  **PAG — Pre-loaded Augmented Generation.**
 
-*RAG finds the answer. PAG already knows it.*
+  *RAG finds the answer. PAG already knows it.*
+</div>
 
 ---
 
@@ -22,7 +24,10 @@ The agent loads your decisions, rules, patterns, and skills at session start —
 
 ---
 
-## The Problem With RAG for Persistent Knowledge
+<div align="center">
+  <h2>The Problem With RAG for Persistent Knowledge</h2>
+</div>
+
 
 RAG is the right tool for large document corpora — "search these 10,000 PDFs." It's the wrong tool for persistent domain knowledge — "know my stack, my decisions, my rules, and my active state."
 
@@ -37,7 +42,9 @@ Smalltalk has none of these failure modes. There is no retrieval happening. You 
 
 ---
 
-## How It Works
+<div align="center">
+  <h2>How It Works</h2>
+</div>
 
 Compress your skill files, memory logs, agent specs, and decision records into `.st` format — typed, pipe-delimited, one line per entry.
 
@@ -55,7 +62,9 @@ At session start, the agent loads the `.st` files. It already knows your world. 
 
 ---
 
-## The Numbers
+<div align="center">
+  <h2>The Numbers</h2>
+</div>
 
 | | Without Smalltalk | With Smalltalk |
 |---|---|---|
@@ -68,7 +77,9 @@ At session start, the agent loads the `.st` files. It already knows your world. 
 
 ---
 
-## The Closing Loop
+<div align="center">
+  <h2>The Closing Loop</h2>
+</div>
 
 PAG is only half the system.
 
@@ -111,7 +122,9 @@ Full protocol: `smalltalk instructions closing-ritual`
 
 ---
 
-## Oriented vs Unoriented — In Practice
+<div align="center">
+  <h2>Oriented vs Unoriented — In Practice</h2>
+</div>
 
 **Without Smalltalk:**
 > "Build me a plumbing demo for Drip Masters."
@@ -126,11 +139,15 @@ An oriented 70B model outperforms an unoriented 405B model on your specific doma
 
 ---
 
-## Quick Start
+<div align="center">
+  <h2>Quick Start</h2>
+</div>
 
 > **Full guide with screenshots, troubleshooting, and all tools:** [docs/getting-started.md](docs/getting-started.md)
 
-### 1. Install
+<div align="center">
+  <h3>1. Install</h3>
+</div>
 
 ```bash
 # Option A — pip (CLI + MCP server)
@@ -142,7 +159,9 @@ cd smalltalk/smalltalk
 pip install -e .
 ```
 
-### 2. Register the MCP server
+<div align="center">
+  <h3>2. Register the MCP server</h3>
+</div>
 
 ```bash
 # Claude Code
@@ -154,7 +173,9 @@ claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
 
 > **Windows / PowerShell:** quotes are required — `-- "python -m smalltalk.mcp_server"`
 
-### 3. Add the global session hook
+<div align="center">
+  <h3>3. Add the global session hook</h3>
+</div>
 
 Copy `examples/hooks/CLAUDE.md` to `~/.claude/CLAUDE.md`.
 
@@ -168,7 +189,9 @@ cp examples/hooks/CLAUDE.md ~/.claude/CLAUDE.md
 Copy-Item examples\hooks\CLAUDE.md $env:USERPROFILE\.claude\CLAUDE.md
 ```
 
-### 4. Orient your first project
+<div align="center">
+  <h3>4. Orient your first project</h3>
+</div>
 
 ```bash
 # One command — backup → mine → palace init → writes CLAUDE.md to project
@@ -183,7 +206,9 @@ smalltalk bootstrap ~/Dev/my-project/_brain \
 smalltalk bootstrap ~/Dev/my-project/_brain --dry-run
 ```
 
-### 5. Keep files updated automatically
+<div align="center">
+  <h3>5. Keep files updated automatically</h3>
+</div>
 
 ```bash
 # Watch a directory — auto-convert on save
@@ -193,7 +218,9 @@ smalltalk mine ~/Dev/my-project/_brain --watch
 smalltalk install-hook ~/Dev/my-project
 ```
 
-### 6. Verify
+<div align="center">
+  <h3>6. Verify</h3>
+</div>
 
 Open your AI tool and ask:
 ```
@@ -213,7 +240,9 @@ smalltalk check _brain/     # any contradictions?
 
 ---
 
-## The Grammar
+<div align="center">
+  <h2>The Grammar</h2>
+</div>
 
 ```
 TYPE: identifier | field | field | field
@@ -228,7 +257,9 @@ TYPE: identifier | field | field | field
 
 Values: lowercase-hyphenated. One line per entry. Append — never overwrite.
 
-### Universal Types
+<div align="center">
+  <h3>Universal Types</h3>
+</div>
 ```st
 RULE:     id | description | hard|soft
 DECISION: id | choice>rejected | reason | date
@@ -238,7 +269,9 @@ NOTE:     id | observation
 CONFIG:   id | key | value
 ```
 
-### Memory Types
+<div align="center">
+  <h3>Memory Types</h3>
+</div>
 ```st
 WIN:       id | technique | outcome | repeat:y/n
 CLIENT:    id | pref:what | avoid:what | updated:date
@@ -246,7 +279,9 @@ COMPONENT: id | stack | does:what | use-when
 PROMPT:    id | task-type | approach | why-worked | reuse:y/n
 ```
 
-### Knowledge Graph
+<div align="center">
+  <h3>Knowledge Graph</h3>
+</div>
 ```st
 LINK:   source | rel:relationship | target | [valid_from:YYYY-MM] | [ended:YYYY-MM] | [stability:x]
 TUNNEL: wing-id | connects:wing-id | via:shared-topic
@@ -261,7 +296,9 @@ stability:stable      valid until explicitly ended (default)
 stability:transient   time-windowed — assignments, sprints, current status
 ```
 
-### Skill Types
+<div align="center">
+  <h3>Skill Types</h3>
+</div>
 ```st
 SKILL:  id | triggers | stack | version
 USE:    id | when:context
@@ -273,7 +310,9 @@ AVOID:  id | antipatterns+separated
 SCRIPT: id | path/to/script | what-it-does
 ```
 
-### Agent Types
+<div align="center">
+  <h3>Agent Types</h3>
+</div>
 ```st
 AGENT:   id | role | capabilities | scope
 TASK:    id | action | target | priority:high|mid|low
@@ -286,7 +325,9 @@ Full spec: [`spec/grammar.md`](spec/grammar.md)
 
 ---
 
-## Two-Tier Loading
+<div align="center">
+  <h2>Two-Tier Loading</h2>
+</div>
 
 Keeps session cost low without losing depth.
 
@@ -304,7 +345,9 @@ You never pay for both upfront.
 
 ---
 
-## Wake-Up
+<div align="center">
+  <h2>Wake-Up</h2>
+</div>
 
 Every session, extract only what is currently true:
 
@@ -332,7 +375,9 @@ Compare to loading raw `_brain/` markdown: 10,000–40,000 tokens.
 
 ---
 
-## Knowledge Graph
+<div align="center">
+  <h2>Knowledge Graph</h2>
+</div>
 
 A temporal entity-relationship graph built entirely from `.st` files. No database. No vector store. Human-readable, git-trackable.
 
@@ -353,7 +398,9 @@ smalltalk kg visualize _brain/           # interactive graph in browser
 
 ---
 
-## Palace Navigation
+<div align="center">
+  <h2>Palace Navigation</h2>
+</div>
 
 Structures `.st` files into wings, rooms, and tunnels. Agents navigate — they don't scan.
 
@@ -383,7 +430,9 @@ smalltalk navigate _brain/ "auth decisions"
 
 ---
 
-## Contradiction Detection
+<div align="center">
+  <h2>Contradiction Detection</h2>
+</div>
 
 Rules-based. No LLM required.
 
@@ -410,7 +459,9 @@ Agents running via MCP run this cycle autonomously — detect, invalidate, confi
 
 ---
 
-## MCP Server — 20 Tools
+<div align="center">
+  <h2>MCP Server — 20 Tools</h2>
+</div>
 
 ```bash
 python -m smalltalk.mcp_server
@@ -442,7 +493,9 @@ claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
 
 ---
 
-## CLI Reference
+<div align="center">
+  <h2>CLI Reference</h2>
+</div>
 
 ```bash
 # First time setup — one command
@@ -505,7 +558,9 @@ claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
 
 ---
 
-## Requirements
+<div align="center">
+  <h2>Requirements</h2>
+</div>
 
 - Python 3.9+
 - `typer>=0.9.0`, `httpx>=0.27.0`, `rich>=10.11.0`, `mcp>=1.0.0`
@@ -517,7 +572,9 @@ pip install smalltalk-cli
 
 ---
 
-## Credits
+<div align="center">
+  <h2>Credits</h2>
+</div>
 
 Smalltalk is a direct evolution of the **AAAK dialect** from [MemPalace](https://github.com/MemPalace/mempalace).
 
@@ -535,7 +592,9 @@ If MemPalace is the proof of concept, Smalltalk is the production system.
 
 ---
 
-## License
+<div align="center">
+  <h2>License</h2>
+</div>
 
 MIT
 
