@@ -157,7 +157,7 @@ The MCP server gives your agent 18 tools for navigation, contradiction detection
 
 ```bash
 # Claude Code
-claude mcp add smalltalk -- python -m smalltalk.mcp_server
+claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
 
 # Or install from the plugin folder (if you cloned the repo)
 claude mcp install .claude-plugin/

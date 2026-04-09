@@ -28,7 +28,7 @@ pip install smalltalk-cli
 ### Step 2: Register the MCP Server
 
 ```bash
-claude mcp add smalltalk -- python -m smalltalk.mcp_server
+claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
 ```
 
 Or install from the repo root (recommended if you cloned the repo):
