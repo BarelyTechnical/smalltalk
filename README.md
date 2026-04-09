@@ -15,18 +15,24 @@ An oriented agent already knows your stack decisions, your brand rules, your cur
 
 ## How It Works
 
-Smalltalk is built on four components:
+Smalltalk is built on four components.
 
-**Grammar**
+---
+
+### Grammar
+
 A typed, pipe-delimited, one-line-per-entry format. `DECISION`, `RULE`, `PATTERN`, `SKILL`, `AGENT`, `LINK`. Each type carries semantic meaning that any LLM reads without a decoder. A 200-line skill file becomes 20 lines. A full `_brain/` in prose becomes a few hundred tokens of structured, queryable facts.
 
-**Knowledge Graph**
+### Knowledge Graph
+
 A temporal entity-relationship graph built entirely from `.st` files. No database. No vector store. The KG maps who works on what, what depends on what, what changed and when. The model reads it. It doesn't discover it.
 
-**The Palace**
+### The Palace
+
 A wing/room/tunnel navigation layer. Instead of scanning everything flat, the agent navigates to what's relevant. `_index.st` is the map. `navigate()` is the route. The model goes directly. It doesn't search.
 
-**Tooling**
+### Tooling
+
 A Python CLI and MCP server exposing 18 tools. Integrates with Claude Code, Cursor, Codex, Windsurf, Antigravity, and any MCP-compatible client.
 
 ---
