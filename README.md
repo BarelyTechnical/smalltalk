@@ -1,12 +1,13 @@
 # Smalltalk
 
-### A cognitive layer for AI agents. Not just compression — orientation.
+> **A cognitive layer for AI agents. Not just compression — orientation.**
 
 Most agents are reactive. They search, discover, infer. Every session starts from zero. The model has capability but no persistent *orientation* — it knows HOW to do things, but not WHERE your things live, WHAT was decided, or WHEN to invoke which tool.
 
 So the model greps. It loads files and reads them to figure out what they mean. It guesses what tool or skill applies. It rediscovers current state that existed in yesterday's session. It burns thousands of tokens before writing a single line of code.
 
-Smalltalk changes the cognitive posture from **reactive to oriented**.
+> [!IMPORTANT]
+> Smalltalk changes the cognitive posture from **reactive to oriented**.
 
 **The Grammar** — A typed, pipe-delimited, one-line-per-entry format. Every LLM understands it without a decoder or fine-tuning. `DECISION`, `RULE`, `PATTERN`, `SKILL`, `AGENT`, `LINK` — each type carries meaning the model can act on immediately. A 200-line skill file becomes 20 lines. A `_brain/` full of prose becomes one line per queryable fact.
 
@@ -16,11 +17,11 @@ Smalltalk changes the cognitive posture from **reactive to oriented**.
 
 **The Tooling** — A Python CLI and MCP server (18 tools) that plug into Claude Code, Cursor, Antigravity, and any MCP-compatible client.
 
-&nbsp;
+***
 
 [Quick Start](#quick-start) · [Grammar](#the-grammar) · [Memory System](#the-memory-system) · [Knowledge Graph](#the-knowledge-graph) · [Palace Navigation](#palace-navigation) · [Contradiction Detection](#contradiction-detection) · [CLI Reference](#cli-reference) · [MCP Server](#mcp-server)
 
-&nbsp;
+***
 
 ### Oriented models outperform reactive ones.
 
@@ -73,13 +74,10 @@ smalltalk mine ~/Dev/skills \
   --model llama3.1
 ```
 
-Then tell your agents to load `.st` files. One line in your `CLAUDE.md`, `GEMINI.md`, or system prompt:
+Then tell your agents to load `.st` files. Add this ONE line to your `CLAUDE.md`, `GEMINI.md`, or system prompt:
 
-```
-Read .st files before .md files. .st is Smalltalk compressed format —
-load as session context. Load .md references only when a specific topic
-requires deep detail.
-```
+> [!TIP]
+> Read `.st` files before `.md` files. `.st` is the Smalltalk compressed format — load as session context. Load `.md` references only when a specific topic requires deep detail.
 
 ---
 
@@ -123,17 +121,18 @@ RULE: ui-skill | no-dynamic-class-names | hard
 
 `.st` files enable a retrieval pattern that keeps session costs low without losing depth:
 
-**Tier 1 — Session start (always loaded, cheap):**
-Agent loads `.st` files. Full context in ~180 tokens instead of ~1,800.
+1. **Tier 1 — Session start (always loaded, cheap):**
+   Agent loads `.st` files. Full orientation context in ~180 tokens instead of ~1,800.
 
-**Tier 2 — On demand (targeted):**
-When a specific topic needs deep detail, agent loads the original `.md` via `REF`:
+2. **Tier 2 — On demand (targeted):**
+   When a specific topic needs deep detail, agent reads the original `.md` via the `REF` link.
 
-```
+```st
 REF: ui-skill | references/components.st | covers:component-catalog
 ```
 
-Broad context cheap. Deep context on demand.
+> [!NOTE]
+> Broad context is cheap. Deep context stays on demand.
 
 ---
 
@@ -151,15 +150,16 @@ Smalltalk is built to be your agent's long-term memory. Facts are stored as type
 
 ### Wake-Up Context
 
-On every agent session start, load only what's currently true:
+On every agent session start, load **only what's currently true**:
 
 ```bash
 smalltalk wake-up ~/Dev/_brain/
 ```
 
-Outputs ~150 tokens. Includes active DECISION entries, hard RULE entries, active PATTERN entries, and repeat:y WIN entries. Historical entries with `ended:` are excluded. Permanent entries appear first.
+> [!NOTE]
+> Outputs ~150 tokens. Includes active `DECISION` entries, `hard` `RULE` entries, active `PATTERN` entries, and `repeat:y` `WIN` entries. **Historical entries with `ended:` are excluded.** Permanent entries always appear first.
 
-```
+```st
 # Smalltalk wake-up — 4 current entries
 
 # permanent (core truth)
@@ -305,7 +305,8 @@ Detects:
 | `WIN` | Same subject with `repeat:y` and `repeat:n` |
 | `LINK` | Same source + rel pointing to different targets simultaneously (exclusive rels) |
 
-Temporal awareness: entries with `ended: <= today` are **excluded** — a superseded entry next to a new one is correct resolution, not contradiction.
+> [!NOTE]
+> Temporal awareness: entries with `ended: <= today` are **excluded** — a superseded entry next to a new one is correct resolution, not a contradiction.
 
 Example output:
 
@@ -613,19 +614,20 @@ Unoriented agents are reactive by default:
 5. Rediscovers state that was fully resolved in a previous session
 6. Burns token budget on discovery before doing any real work
 
-This is not a capability problem. The model is capable. It's an *orientation* problem. Capability without orientation wastes itself on navigation.
+> [!WARNING]
+> This is not a capability problem. The model is capable. It's an *orientation* problem. Capability without orientation wastes itself on navigation.
 
 ### What Orientation Gives You
 
 With Smalltalk loaded:
 
-- The model reads `SKILL: content-strategist | automation+workflow | ...` → knows exactly what agent to invoke for content tasks, without searching
-- The model reads `USE: content-strategist | when:automation-project-needs-angles` → knows *when* to invoke it
-- The model reads `DECISION: deploy | railway>vercel | scale | 2026-04` → knows the current deployment decision without asking
-- The model reads `WING: auth | type:topic | keywords:authentication+jwt` → knows where auth context lives before it needs it
-- The model reads `LINK: project | rel:in-stage | stage-03 | valid_from:2026-04` → knows the project is actively in build phase
+- The model reads `SKILL: content-strategist` → knows exactly **what agent** to invoke
+- The model reads `USE: content-strategist | when:...` → knows exactly **when** to invoke it
+- The model reads `DECISION: deploy | railway>vercel` → knows the **current deployment** decision
+- The model reads `WING: auth | type:topic` → knows **where** auth context lives
+- The model reads `LINK: project | rel:in-stage | stage-03` → knows the project is actively in **build phase**
 
-The model doesn't ask. It doesn't search. It already knows.
+> **The model doesn't ask. It doesn't search. It already knows.**
 
 ### The Cognitive Architecture
 
@@ -668,7 +670,8 @@ This is what the AAAK dialect first demonstrated: LLMs understand typed compress
 | Detect contradictions | manual review | `check` — automated, zero LLM |
 | Resolve contradictions | manual edit | `kg invalidate` — one command |
 
-An oriented 70B model outperforms an unoriented 405B model on your specific domain. The difference is not intelligence — it's the absence of wasted discovery.
+> [!IMPORTANT]
+> An oriented 70B model outperforms an unoriented 405B model on your specific domain. The difference is not intelligence — it's the absence of wasted discovery.
 
 ### No Clever Prompts Required
 
@@ -706,7 +709,7 @@ The KG grows with every project. Every mistake logged means it can't be repeated
 
 Six months in, you have a brain that knows your entire domain history — what was tried, what worked, what was decided, what changed, and why. `wake-up` surfaces only what's currently true. The model doesn't inherit the confusion of the past — only the clarity of resolved knowledge.
 
-That is the actual goal: a system that gets more useful the longer you use it, without getting heavier.
+> **That is the actual goal: a system that gets more useful the longer you use it, without getting heavier.**
 
 ---
 
@@ -733,4 +736,4 @@ MIT
 
 ---
 
-*Smalltalk v3.0.0 — the best context is the context that fits.*
+*Smalltalk v3.0.1 — the best context is the context that fits.*
