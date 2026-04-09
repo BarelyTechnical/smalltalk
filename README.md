@@ -57,51 +57,144 @@ A Python CLI and MCP server exposing 18 tools. Integrates with Claude Code, Curs
 
 ---
 
-## Quick Start
+## Getting Started
+
+> [!TIP]
+> Want setup instructions for a specific tool? Jump straight to [docs/setup.md](docs/setup.md) for step-by-step guides covering Claude Code, Cursor, Codex, Windsurf, Antigravity, and OpenClaw.
+
+---
+
+### Step 1: Install
 
 ```bash
 pip install smalltalk-cli
-
-# See what's convertible
-smalltalk init ~/Dev/skills
-
-# Back up originals
-smalltalk backup ~/Dev/skills
-
-# Convert to .st
-smalltalk mine ~/Dev/skills
-
-# Check compression state
-smalltalk status ~/Dev/skills
 ```
 
-`mine` uses OpenRouter by default. Swap in any OpenAI-compatible endpoint:
+Verify it works:
+
+```bash
+smalltalk --help
+```
+
+---
+
+### Step 2: Point it at your files
+
+Smalltalk works on any directory of text files — skill docs, agent configs, `_brain/` folders, decision logs. Give it a directory to scan:
+
+```bash
+# See what can be converted
+smalltalk init ~/Dev/my-project/_brain
+
+# Outputs a summary: how many files, which are convertible, estimated token savings
+```
+
+---
+
+### Step 3: Back up your originals
+
+```bash
+smalltalk backup ~/Dev/my-project/_brain
+# Copies all .md files to .originals/ preserving folder structure
+# Safe to run before any conversion
+```
+
+---
+
+### Step 4: Convert to .st
+
+```bash
+smalltalk mine ~/Dev/my-project/_brain
+```
+
+This calls an LLM to compress each file into the Smalltalk typed format. By default it uses OpenRouter. You can swap in any OpenAI-compatible endpoint:
 
 ```bash
 # Anthropic
-smalltalk mine ~/Dev/skills \
+smalltalk mine ~/Dev/my-project/_brain \
   --base-url https://api.anthropic.com/v1 \
   --api-key YOUR_KEY
 
-# Local Ollama (free, no API key)
-smalltalk mine ~/Dev/skills \
+# Local Ollama (free, no API key needed)
+smalltalk mine ~/Dev/my-project/_brain \
   --base-url http://localhost:11434/v1 \
   --api-key ollama \
   --model llama3.1
 ```
 
-Then add one line to your `CLAUDE.md`, `GEMINI.md`, or system prompt:
+Check the result:
 
+```bash
+smalltalk status ~/Dev/my-project/_brain
+# Shows per-file token reduction, compression ratio, what's been converted
 ```
-Read .st files before .md files. .st is the Smalltalk compressed format.
-Load as session context. Load .md references only when a specific topic
-requires deep detail.
-```
-
-> [!TIP]
-> See the full setup guide for Claude Code, Cursor, Codex, and Windsurf: [docs/setup.md](docs/setup.md)
 
 ---
+
+### Step 5: Connect your AI tool
+
+Add one line to your tool's context file so the agent knows to load `.st` files first:
+
+**Claude Code** (`CLAUDE.md` in project root or `~/.claude/CLAUDE.md` globally):
+```markdown
+Read .st files before .md files. .st is the Smalltalk compressed format.
+Load as session context. Use the smalltalk_* MCP tools for navigation and contradiction detection.
+```
+
+**Cursor** (`.cursorrules` in project root):
+```
+Read .st files before .md files. .st is the Smalltalk compressed format.
+Call smalltalk_wake_up on _brain/ at session start. Use smalltalk_navigate for domain queries.
+```
+
+**Antigravity / Codex / Windsurf** — same pattern. Drop the instruction into your system prompt or context file.
+
+---
+
+### Step 6: Register the MCP Server
+
+The MCP server gives your agent 18 tools for navigation, contradiction detection, and KG queries.
+
+```bash
+# Claude Code
+claude mcp add smalltalk -- python -m smalltalk.mcp_server
+
+# Or install from the plugin folder (if you cloned the repo)
+claude mcp install .claude-plugin/
+
+# Codex
+# Add to .codex/config.json — see docs/setup.md
+
+# Cursor
+# Add to MCP settings in Cursor preferences — see docs/setup.md
+```
+
+Verify the server is registered:
+
+```bash
+claude mcp list
+# smalltalk   python -m smalltalk.mcp_server
+```
+
+---
+
+### Step 7: Test it
+
+Open a session with your AI tool and ask:
+
+```
+Load session context and tell me what you know about this project.
+```
+
+A correctly oriented agent will:
+1. Call `smalltalk_wake_up` on the `_brain/` directory
+2. Report active decisions, hard rules, and known patterns
+3. Know where everything lives without being told
+
+If it doesn't, check [docs/setup.md](docs/setup.md) for the full diagnostic guide.
+
+---
+
 
 ## The Grammar
 
