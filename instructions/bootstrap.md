@@ -1,77 +1,67 @@
-# Bootstrap — Full Setup Guide
+# smalltalk bootstrap
 
-Bootstrap runs the complete Smalltalk setup sequence in one command.
+One-command project setup. Gets a directory fully oriented as a Smalltalk palace.
 
-## When to use
+---
 
-Run `bootstrap` once when orienting a new project or a freshly cloned repo.
-It is safe to re-run — it skips steps that are already complete.
+## Command
 
-## The sequence
+    smalltalk bootstrap <dir>
+    smalltalk bootstrap <dir> --api-key <key>
+    smalltalk bootstrap <dir> --dry-run
 
-```
-backup → mine → palace init → write CLAUDE.md
-```
+---
 
-| Step | What it does | Required |
-|---|---|---|
-| backup | Copies all .md files to `.originals/` | Always |
-| mine | Converts .md → .st via LLM | Needs API key |
-| palace init | Generates `_index.st` navigation map | Always |
-| CLAUDE.md | Writes global session hook to project root | Always |
+## What it runs
 
-## Commands
+    Step 1  backup         Copy all .md files to .originals/
+    Step 2  mine           Convert .md to .st format (skipped if no API key)
+    Step 3  palace init    Generate _index.st
+    Step 4  config         Write CLAUDE.md to project root
 
-```bash
-# Full setup
-smalltalk bootstrap <dir> --api-key <key>
+Each step is equivalent to running the individual command manually.
 
-# Preview without making changes
-smalltalk bootstrap <dir> --dry-run
+---
 
-# Without API key — runs backup, palace init, CLAUDE.md (skips mine)
-smalltalk bootstrap <dir>
+## Arguments
 
-# Local Ollama (free, no API key required)
-smalltalk bootstrap <dir> --base-url http://localhost:11434/v1 --api-key ollama --model llama3.1
-```
+    --api-key    API key for the mine step (OpenRouter by default)
+                 Set OPENROUTER_API_KEY env var to avoid passing it each time
+    --model      LLM model for conversion (default: anthropic/claude-haiku-4-5)
+    --base-url   OpenAI-compatible endpoint (default: OpenRouter)
+    --dry-run    Preview what would happen without making any changes
+
+---
 
 ## After bootstrap
 
-1. Copy CLAUDE.md to `~/.claude/CLAUDE.md` for global session orientation:
-   ```bash
-   # macOS / Linux
-   cp CLAUDE.md ~/.claude/CLAUDE.md
+    smalltalk wake-up <dir>     Verify context — see what the agent loads
+    smalltalk check <dir>       Verify clean — no contradictions
+    smalltalk status <dir>      Show conversion progress
 
-   # Windows PowerShell
-   Copy-Item CLAUDE.md $env:USERPROFILE\.claude\CLAUDE.md
-   ```
+---
 
-2. Register the MCP server:
-   ```bash
-   claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
-   ```
+## MCP equivalent
 
-3. Verify the setup:
-   ```bash
-   smalltalk status <dir>    # are .st files present?
-   smalltalk wake-up <dir>   # what will the agent see?
-   smalltalk check <dir>     # any contradictions?
-   ```
+    smalltalk_bootstrap_info()   Returns the bootstrap protocol and next steps.
 
-## Directory conventions
+---
 
-Bootstrap detects the project root automatically:
-- If target is named `_brain`, `brain`, or `skills` → parent directory = project root
-- Otherwise → the target directory itself = project root
+## Closing the loop
 
-CLAUDE.md is written to the project root. If CLAUDE.md already exists it is
-NOT overwritten — merge manually or delete first.
+Bootstrap sets up the read side. To close the PAG loop, add to CLAUDE.md:
 
-## Via MCP
+    RULE: session-end | write-decisions-patterns-wins-to-brain | hard
+    TRIGGER: task-complete | event:session-end | then:smalltalk_diary_write
 
-```
-smalltalk_bootstrap_info()
-```
+Then: smalltalk instructions closing-ritual
 
-Returns this protocol as a string for agent consumption.
+---
+
+## Manual equivalent (if you prefer step by step)
+
+    smalltalk init <dir>          1. See what's convertible
+    smalltalk backup <dir>        2. Back up originals
+    smalltalk mine <dir>          3. Convert to .st
+    smalltalk palace init <dir>   4. Generate _index.st
+    smalltalk install-hook <dir>  5. Auto-convert on git commit (optional)

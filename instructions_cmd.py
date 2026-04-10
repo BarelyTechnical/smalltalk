@@ -2,11 +2,7 @@ from pathlib import Path
 
 INSTRUCTIONS_DIR = Path(__file__).parent / "instructions"
 
-VALID_COMMANDS = [
-    "help", "init", "mine", "backup", "status", "check",
-    "wake-up", "diary", "palace", "kg", "closing-ritual",
-    "bootstrap", "route",
-]
+VALID_COMMANDS = ["help", "init", "mine", "backup", "status", "check", "wake-up", "diary", "palace", "kg", "closing-ritual", "bootstrap", "route"]
 
 
 def run_instructions(command: str):

@@ -2,10 +2,9 @@ import typer
 from pathlib import Path
 from typing import Optional
 from rich.console import Console
-
 from smalltalk.init_cmd import run_init
 from smalltalk.backup import run_backup
-from smalltalk.mine import run_mine, run_watch
+from smalltalk.mine import run_mine
 from smalltalk.status import run_status
 from smalltalk.instructions_cmd import run_instructions
 from smalltalk.wake_up import build_wake_up_context
@@ -22,9 +21,10 @@ from smalltalk.kg import (
 )
 from smalltalk.kg_viz import visualize as _kg_visualize
 from smalltalk.palace_cmd import palace_app
-from smalltalk.route import route as _route, format_route_results
 from smalltalk.bootstrap_cmd import run_bootstrap
+from smalltalk.watch_cmd import run_mine_watch
 from smalltalk.hook_cmd import run_install_hook
+from smalltalk.router import route as _route, format_route_results
 
 console = Console()
 
@@ -33,9 +33,9 @@ app = typer.Typer(
     help=(
         "Smalltalk — institutional memory for AI agents.\n\n"
         "The agent doesn't know your history. Smalltalk changes that.\n\n"
-        "Quick start:  smalltalk bootstrap <_brain/>\n"
-        "Check first:  smalltalk check <_brain/>   ← detects decision contradictions\n"
-        "Load context: smalltalk wake-up <_brain/>"
+        "Start here:   smalltalk bootstrap <dir>\n"
+        "Check first:  smalltalk check <dir>   ← catches contradictions before agents act\n"
+        "Load context: smalltalk wake-up <dir>"
     ),
     add_completion=False,
 )
@@ -46,98 +46,6 @@ diary_app = typer.Typer(help="Specialist agent diary commands.")
 app.add_typer(kg_app,    name="kg")
 app.add_typer(diary_app, name="diary")
 app.add_typer(palace_app, name="palace")
-
-
-# ---------------------------------------------------------------------------
-# Bootstrap — one-command full setup
-# ---------------------------------------------------------------------------
-
-@app.command()
-def bootstrap(
-    directory: Path = typer.Argument(..., help="Directory to set up (_brain/ or project root)"),
-    api_key: Optional[str] = typer.Option(
-        None, "--api-key", "-k",
-        envvar="OPENROUTER_API_KEY",
-        help="API key for mine step (OpenRouter by default)",
-    ),
-    model: str = typer.Option(
-        "anthropic/claude-haiku-4-5",
-        "--model", "-m",
-        help="Model to use for .md → .st conversion",
-    ),
-    base_url: str = typer.Option(
-        "https://openrouter.ai/api/v1",
-        "--base-url",
-        help="OpenAI-compatible API base URL",
-    ),
-    dry_run: bool = typer.Option(
-        False, "--dry-run",
-        help="Preview steps without making changes",
-    ),
-):
-    """
-    One-command setup: backup → mine → palace init → write CLAUDE.md.
-
-    The fastest way to orient a new project. Run once, then use wake-up and check
-    at every session start. Mine step is skipped if no API key is provided.
-    """
-    run_bootstrap(directory, api_key, model, base_url, dry_run)
-
-
-# ---------------------------------------------------------------------------
-# Route — task-to-skill routing
-# ---------------------------------------------------------------------------
-
-@app.command()
-def route(
-    directory: Path = typer.Argument(..., help="Directory containing .st files (skills/, _brain/, etc.)"),
-    task: str       = typer.Argument(..., help="Natural language task description"),
-    top: int        = typer.Option(5, "--top", "-n", help="Number of results to return"),
-):
-    """
-    Find the most relevant skill/agent files for a task.
-
-    Run at session start before the first message to know which skills to load.
-    Scores by file name match and entry content — no LLM required.
-
-    Example:
-        smalltalk route skills/ "build a landing page for a plumbing company"
-        → skills/seo-expert.st       [score: 6.0]
-        → skills/ui-designer.st      [score: 4.5]
-        → skills/conversion-copy.st  [score: 3.0]
-    """
-    if not directory.exists():
-        console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
-        raise typer.Exit(1)
-
-    results = _route(directory.resolve(), task, top_n=top)
-    console.print(format_route_results(results, task))
-
-
-# ---------------------------------------------------------------------------
-# Install-hook — git post-commit auto-mine
-# ---------------------------------------------------------------------------
-
-@app.command(name="install-hook")
-def install_hook(
-    project_dir: Path = typer.Argument(
-        ..., help="Root of the git repository (must contain .git/)"
-    ),
-    force: bool = typer.Option(
-        False, "--force", "-f",
-        help="Overwrite an existing post-commit hook",
-    ),
-):
-    """
-    Install a git post-commit hook that auto-mines staged .md files.
-
-    After each commit, the hook converts any .md files in the commit to .st
-    format and stages the results. Requires OPENROUTER_API_KEY in your shell
-    environment. Without it the hook exits cleanly — commits are never blocked.
-
-    Uninstall: delete .git/hooks/post-commit
-    """
-    run_install_hook(project_dir, force)
 
 
 # ---------------------------------------------------------------------------
@@ -189,21 +97,16 @@ def mine(
     ),
     watch: bool = typer.Option(
         False, "--watch", "-w",
-        help="Watch directory and auto-convert on file change (Ctrl+C to stop)",
+        help="Watch for new/modified .md files and auto-convert (Ctrl+C to stop)",
     ),
     interval: int = typer.Option(
         3, "--interval",
-        help="Watch poll interval in seconds (default 3)",
+        help="Watch mode polling interval in seconds (default: 3)",
     ),
 ):
-    """
-    Convert detected .md files to Smalltalk .st format.
-
-    Use --watch to auto-convert whenever a .md file is saved.
-    Use --dry-run to preview without making changes.
-    """
+    """Convert .md files to .st format. Add --watch to auto-convert on file change."""
     if watch:
-        run_watch(directory, api_key, model, base_url, interval)
+        run_mine_watch(directory, api_key, model, base_url, keep_originals, interval)
     else:
         run_mine(directory, api_key, model, base_url, keep_originals, dry_run)
 
@@ -220,10 +123,7 @@ def status(
 def instructions(
     command: str = typer.Argument(
         ...,
-        help=(
-            "Command name: help, init, mine, backup, status, check, wake-up, "
-            "diary, palace, kg, closing-ritual, bootstrap, route"
-        ),
+        help="Command name: help, init, mine, backup, status, check, wake-up, diary, palace, kg, closing-ritual, bootstrap, route",
     ),
 ):
     """Print step-by-step instructions for a command. Designed for agents."""
@@ -255,14 +155,25 @@ def check(
     directory: Path = typer.Argument(..., help="Directory to check for contradictions"),
 ):
     """
-    Detect contradictions across .st files.
+    Detect contradictions across .st files. Run this before any agent acts.
 
-    Flags conflicting DECISION entries, RULE strength mismatches,
-    PATTERN conflicting fixes, WIN repeat disagreements, and LINK
-    exclusivity violations. Rules-based — no LLM required.
+    When an agent reads conflicting facts — two active DECISION entries pointing
+    to different deploy targets, a RULE flagged hard in one file and soft in
+    another — it picks one arbitrarily. Smalltalk catches this before it acts.
 
-    Run this before any deployment or production push. Agents running
-    via MCP can resolve contradictions autonomously using kg invalidate.
+    Detects:
+        DECISION  — same subject, diverging active choices
+        RULE      — same id, hard in one file / soft in another
+        PATTERN   — same cause, conflicting fixes
+        WIN       — same subject, repeat:y vs repeat:n
+        LINK      — exclusive relationships pointing to multiple active targets
+
+    Rules-based — no LLM required.
+
+    Resolution cycle:
+        1. smalltalk check <dir>             ← see contradictions + file/line
+        2. smalltalk kg invalidate <f> <n>   ← close the older entry
+        3. smalltalk check <dir>             ← confirm cleared
     """
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
@@ -330,7 +241,9 @@ def kg_query_cmd(
     entity:    str  = typer.Argument(..., help="Entity to query, e.g. 'kai' or 'auth'"),
     as_of:     str  = typer.Option("", "--as-of", help="YYYY-MM — point-in-time query"),
 ):
-    """Query the knowledge graph for an entity — relationships, active and historical."""
+    """
+    Query the knowledge graph for an entity — relationships, active and historical.
+    """
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
         raise typer.Exit(1)
@@ -343,7 +256,9 @@ def kg_timeline_cmd(
     directory: Path = typer.Argument(..., help="Directory containing .st files"),
     entity:    str  = typer.Argument(..., help="Entity to trace chronologically"),
 ):
-    """Show the chronological story of an entity via LINK entries."""
+    """
+    Show the chronological story of an entity via LINK entries.
+    """
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
         raise typer.Exit(1)
@@ -364,6 +279,7 @@ def kg_invalidate_cmd(
     This is the resolution step after `smalltalk check` flags a contradiction.
 
     Workflow:
+
       1. smalltalk check <dir>              # see contradictions + file/line
       2. smalltalk kg invalidate <file> <line_no>   # close the older entry
       3. smalltalk check <dir>              # confirm cleared
@@ -413,6 +329,81 @@ def kg_visualize_cmd(
     except Exception as exc:
         console.print(f"[red]ERROR:[/red] {exc}")
         raise typer.Exit(1)
+
+
+# ---------------------------------------------------------------------------
+# New commands: bootstrap, install-hook, route
+# ---------------------------------------------------------------------------
+
+@app.command()
+def bootstrap(
+    directory: Path = typer.Argument(..., help="Directory to bootstrap (skills, _brain, agents)"),
+    api_key: Optional[str] = typer.Option(
+        None, "--api-key", "-k",
+        envvar="OPENROUTER_API_KEY",
+        help="API key for mine step (optional — skips mine if not provided)",
+    ),
+    model: str = typer.Option(
+        "anthropic/claude-haiku-4-5", "--model", "-m",
+        help="Model for conversion",
+    ),
+    base_url: str = typer.Option(
+        "https://openrouter.ai/api/v1", "--base-url",
+        help="OpenAI-compatible API base URL",
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run",
+        help="Preview without making changes",
+    ),
+):
+    """
+    One-command setup: backup → mine → palace init → generate CLAUDE.md.
+
+    Gets a directory fully oriented in one step.
+    Equivalent to running init, backup, mine, palace init, and config generation manually.
+    """
+    run_bootstrap(directory, api_key, model, base_url, dry_run)
+
+
+@app.command(name="install-hook")
+def install_hook(
+    directory: Path = typer.Argument(
+        ".",
+        help="Directory inside the git repo (default: current directory)",
+    ),
+    force: bool = typer.Option(
+        False, "--force",
+        help="Overwrite existing hook files",
+    ),
+):
+    """
+    Install a git post-commit hook that auto-converts staged .md files to .st.
+
+    Finds the nearest .git directory from <directory> and installs the hook.
+    After each commit, any staged .md files are mined automatically.
+    """
+    run_install_hook(directory, force)
+
+
+@app.command()
+def route(
+    directory: Path = typer.Argument(..., help="Directory containing .st files"),
+    task: str = typer.Argument(..., help="Task description to route, e.g. 'build a landing page'"),
+    top: int = typer.Option(5, "--top", "-n", help="Number of files to return"),
+):
+    """
+    Route a task description to the most relevant .st skill/agent files.
+
+    Scores files using both structural (file/dir name) and content-based
+    (SKILL trigger fields, USE when: fields, AGENT capabilities) matching.
+
+    Use this at session start to know which files to load for a given task.
+    """
+    if not directory.exists():
+        console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
+        raise typer.Exit(1)
+    results = _route(directory.resolve(), task, top_n=top)
+    console.print(format_route_results(results, task, directory.resolve()))
 
 
 # ---------------------------------------------------------------------------

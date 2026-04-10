@@ -1,0 +1,609 @@
+Metadata-Version: 2.4
+Name: smalltalk-cli
+Version: 3.1.0
+Summary: Institutional memory for AI agents. Structured decisions, contradiction detection, and a compounding PAG loop. 20 MCP tools. Zero infrastructure.
+License: MIT
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: typer>=0.9.0
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: rich>=10.11.0
+Requires-Dist: mcp>=1.0.0
+Dynamic: license-file
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/smalltalk-dark.svg">
+    <img src="docs/smalltalk-light.svg" alt="smalltalk" width="400">
+  </picture>
+
+  # Smalltalk
+
+  **Institutional memory for AI agents.**
+
+  *Every agent deployment starts with the same problem: the agent doesn't know your history.*
+
+</div>
+
+---
+
+Anthropic Managed Agents. OpenAI Agents SDK. AWS agent infrastructure. These platforms now handle orchestration, sandboxing, credential management, and long-running execution.
+
+None of them solve this: **the agent still starts blank.**
+
+It doesn't know your team decided against microservices six months ago. It doesn't know the auth token bug was already solved in March. It doesn't know the senior engineer who owned the billing domain left last month. It doesn't know your brand rules, your deploy targets, or which patterns have already broken three times.
+
+Smalltalk is the layer that fills that gap. Your decisions, rules, patterns, and wins — structured, compressed, contradiction-detected, and pre-loaded before the first token of work.
+
+> [!IMPORTANT]
+> This is not a memory tool. It is an orientation layer — and more specifically, a system for preventing expensive agent mistakes by giving them the context a senior engineer carries in their head.
+
+---
+
+<div align="center">
+  <h2>Contradiction Detection — The Flagship Feature</h2>
+</div>
+
+Every codebase accumulates conflicting decisions. Two DECISION entries saying deploy to Railway and deploy to Vercel. A RULE flagged hard in one file and soft in another. A PATTERN with two different fixes for the same cause.
+
+When an agent reads contradictory facts, it picks one arbitrarily — and makes confident wrong decisions at scale.
+
+Smalltalk catches this before the agent acts. Rules-based, no LLM required.
+
+```bash
+smalltalk check _brain/
+```
+
+```
+[CONFLICT] Found 1 contradiction(s)  (0 CRITICAL, 1 WARNING)
+
+  1. [WARNING] DECISION: deploy | diverging-choices  stability:stable
+     Values: railway | vercel
+     decisions.st:3  DECISION: deploy | vercel>railway | cost | 2026-01  << older
+     decisions.st:7  DECISION: deploy | railway>vercel | scale | 2026-04  << newer
+
+     Resolution:
+       Close the older entry by adding `ended:2026-04` to:
+           DECISION: deploy | vercel>railway | cost | 2026-01
+```
+
+Resolution — one command:
+
+```bash
+smalltalk kg invalidate _brain/decisions.st 3
+# → Appends | ended:2026-04 to line 3
+
+smalltalk check _brain/
+# → OK  No active contradictions detected.
+```
+
+Agents running via MCP execute this full cycle autonomously — detect, invalidate, confirm — without human intervention.
+
+**What Smalltalk detects:**
+- `DECISION` — same subject, diverging active choices
+- `RULE` — same subject flagged hard in one file, soft in another
+- `PATTERN` — same cause with conflicting fixes
+- `WIN` — same subject with repeat:y and repeat:n
+- `LINK` — exclusive relationships pointing to multiple active targets
+
+> [!NOTE]
+> This is the commercially legible feature. "We automatically detect when your team's documented decisions contradict each other, and surface it before an agent acts on stale information" — that's a risk management story. That's the kind of thing that gets budget.
+
+---
+
+<div align="center">
+  <h2>The Closing Loop — Intelligence That Compounds</h2>
+</div>
+
+Every session, the agent reads oriented context at start. Every session end, the agent writes back what it learned. The brain grows by doing the work.
+
+```
+Session start → load oriented context → do work →
+closing ritual → write DECISION + PATTERN + WIN →
+next session starts smarter than the last
+```
+
+```bash
+# At session end — the agent writes back
+smalltalk diary write reviewer "DECISION: auth | clerk>auth0 | sdk-simplicity | 2026-04"
+smalltalk diary write reviewer "PATTERN: jwt | broke:auth | cause:missing-exp | fix:add-exp-claim | reuse:y"
+smalltalk check _brain/
+
+# Or via MCP (autonomous agents)
+smalltalk_diary_write("reviewer", "WIN: clerk-setup | one-sdk-all-platforms | repeat:y")
+smalltalk_check("_brain/")
+```
+
+The rule that closes the loop — in your `CLAUDE.md` or system prompt:
+
+```
+RULE: session-end | write-decisions-patterns-wins-to-brain | hard
+TRIGGER: task-complete | event:session-end | then:smalltalk_diary_write
+```
+
+> [!TIP]
+> Without the closing ritual: every session starts from the same brain.
+> With it: every session compounds. A Smalltalk agent with a closing ritual gets better by doing the work — not by retraining.
+
+Full protocol: `smalltalk instructions closing-ritual`
+
+---
+
+<div align="center">
+  <h2>How It Works</h2>
+</div>
+
+Compress your skill files, memory logs, agent specs, and decision records into `.st` format — typed, pipe-delimited, one line per entry.
+
+```st
+DECISION: deploy  | railway>vercel     | scale+cost      | 2026-04
+RULE:     brand   | no-purple-gradient | hard
+PATTERN:  jwt     | broke:auth         | cause:missing-exp | fix:add-exp-claim | reuse:y
+SKILL:    seo     | when:any-web-build | stack:schema+meta
+WIN:      palace  | score-wing-room   | 34pct-boost      | repeat:y
+```
+
+A 200-line skill file becomes 20 lines. A full `_brain/` in prose becomes a few hundred tokens. The model reads it without a decoder — any LLM, any platform, any agent infrastructure.
+
+At session start, the agent loads the `.st` files. It already knows your world. It doesn't discover it.
+
+---
+
+<div align="center">
+  <h2>Quick Start</h2>
+</div>
+
+> **Full guide with screenshots, troubleshooting, and all tools:** [docs/getting-started.md](docs/getting-started.md)
+
+<div align="center">
+  <h3>1. Install</h3>
+</div>
+
+```bash
+# Option A — pip (CLI + MCP server)
+pip install smalltalk-cli
+
+# Option B — clone (also gets examples, hook templates, spec, plugin files)
+git clone https://github.com/ApexAutomate/smalltalk.git
+cd smalltalk/smalltalk
+pip install -e .
+```
+
+<div align="center">
+  <h3>2. Register the MCP server</h3>
+</div>
+
+```bash
+# Claude Code
+claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
+
+# Cursor: Settings → MCP Servers → add:
+# {"smalltalk": {"command": "python", "args": ["-m", "smalltalk.mcp_server"]}}
+```
+
+> **Windows / PowerShell:** quotes are required — `-- "python -m smalltalk.mcp_server"`
+
+<div align="center">
+  <h3>3. Bootstrap your first project</h3>
+</div>
+
+```bash
+# One command — backup → mine → palace init → writes CLAUDE.md
+smalltalk bootstrap ~/Dev/my-project/_brain --api-key YOUR_KEY
+
+# Local Ollama (free, no API key needed)
+smalltalk bootstrap ~/Dev/my-project/_brain \
+  --base-url http://localhost:11434/v1 \
+  --api-key ollama --model llama3.1
+
+# Preview without making changes
+smalltalk bootstrap ~/Dev/my-project/_brain --dry-run
+```
+
+<div align="center">
+  <h3>4. Add the global session hook</h3>
+</div>
+
+Copy `examples/hooks/CLAUDE.md` to `~/.claude/CLAUDE.md`.
+
+This wires automatic wake-up at session start and the closing ritual at session end — across every project.
+
+```bash
+# macOS / Linux
+cp examples/hooks/CLAUDE.md ~/.claude/CLAUDE.md
+
+# Windows PowerShell
+Copy-Item examples\hooks\CLAUDE.md $env:USERPROFILE\.claude\CLAUDE.md
+```
+
+<div align="center">
+  <h3>5. Keep files updated automatically</h3>
+</div>
+
+```bash
+# Watch a directory — auto-convert on save
+smalltalk mine ~/Dev/my-project/_brain --watch
+
+# Or: auto-convert on every git commit (one-time install per repo)
+smalltalk install-hook ~/Dev/my-project
+```
+
+<div align="center">
+  <h3>6. Verify</h3>
+</div>
+
+```bash
+smalltalk check _brain/     # ← run this first — catch contradictions
+smalltalk wake-up _brain/   # see what the agent will load
+smalltalk status _brain/    # are .st files present?
+```
+
+Open your AI tool and ask:
+```
+Load session context and tell me what you know about this project.
+```
+
+A correctly oriented agent calls `smalltalk_wake_up`, reports active decisions and rules, and knows where everything lives without being told.
+
+> [!TIP]
+> Per-tool setup guides (Claude Code, Cursor, Codex, Windsurf, Antigravity): [docs/setup.md](docs/setup.md)
+
+---
+
+<div align="center">
+  <h2>The Numbers</h2>
+</div>
+
+| | Without Smalltalk | With Smalltalk |
+|---|---|---|
+| Session start | agent starts blank | agent starts oriented |
+| Contradictions caught | never — agent picks one arbitrarily | before agent acts |
+| Context compounds | no | yes — every session writes back |
+| One skill file | ~1,800 tokens | ~180 tokens |
+| Full `_brain/` | ~20,000–50,000 tokens | ~2,000–5,000 tokens |
+| Requires infrastructure | no (RAG does) | no — plain files |
+| Works with Managed Agents | — | yes — layer on top |
+
+---
+
+<div align="center">
+  <h2>The Grammar</h2>
+</div>
+
+```
+TYPE: identifier | field | field | field
+```
+
+| Symbol | Meaning | Example |
+|---|---|---|
+| `\|` | Field separator | |
+| `+` | Multiple values | `when:next+vite+remix` |
+| `:` | Key-value pair | `broke:token-refresh` |
+| `>` | Choice over alternative | `railway>vercel` |
+
+Values: lowercase-hyphenated. One line per entry. Append — never overwrite.
+
+<div align="center">
+  <h3>Universal Types</h3>
+</div>
+
+```st
+RULE:     id | description | hard|soft
+DECISION: id | choice>rejected | reason | date
+PATTERN:  id | broke:what | cause:why | fix:what | reuse:y/n
+REF:      id | path/to/file.st | covers:topic
+NOTE:     id | observation
+CONFIG:   id | key | value
+```
+
+<div align="center">
+  <h3>Memory Types</h3>
+</div>
+
+```st
+WIN:       id | technique | outcome | repeat:y/n
+CLIENT:    id | pref:what | avoid:what | updated:date
+COMPONENT: id | stack | does:what | use-when
+PROMPT:    id | task-type | approach | why-worked | reuse:y/n
+```
+
+<div align="center">
+  <h3>Knowledge Graph</h3>
+</div>
+
+```st
+LINK:   source | rel:relationship | target | [valid_from:YYYY-MM] | [ended:YYYY-MM] | [stability:x]
+TUNNEL: wing-id | connects:wing-id | via:shared-topic
+```
+
+Temporal fields work on **any** entry type:
+
+```
+valid_from:YYYY-MM    when this fact became true
+ended:YYYY-MM         when this fact stopped being true (set by contradiction resolution only)
+stability:permanent   always load — never auto-expire
+stability:stable      valid until explicitly ended (default)
+stability:transient   time-windowed — assignments, sprints, current status
+```
+
+<div align="center">
+  <h3>Skill Types</h3>
+</div>
+
+```st
+SKILL:  id | triggers | stack | version
+USE:    id | when:context
+PHASE:  id | number | name | what-happens
+STEP:   id | phase | number | action | required|optional
+STACK:  id | layer | tool | why
+CHECK:  id | verification-item | required|optional
+AVOID:  id | antipatterns+separated
+SCRIPT: id | path/to/script | what-it-does
+```
+
+<div align="center">
+  <h3>Agent Types</h3>
+</div>
+
+```st
+AGENT:   id | role | capabilities | scope
+TASK:    id | action | target | priority:high|mid|low
+TRIGGER: id | event | condition | then:action
+OUTPUT:  id | type | destination | format
+ERROR:   id | broke:what | cause:why | state:recovered|unresolved
+```
+
+Full spec: [`spec/grammar.md`](spec/grammar.md)
+
+---
+
+<div align="center">
+  <h2>Two-Tier Loading</h2>
+</div>
+
+Keeps session cost low without losing depth.
+
+**Tier 1 — Session start (always, ~150–300 tokens)**
+Agent loads `.st` files. Full orientation. Fixed cost.
+
+**Tier 2 — On demand (targeted)**
+When depth is needed, agent reads the original `.md` via its `REF` link.
+
+```st
+REF: ui-skill | references/components.md | covers:component-catalog
+```
+
+You never pay for both upfront.
+
+---
+
+<div align="center">
+  <h2>Wake-Up</h2>
+</div>
+
+Every session, extract only what is currently true:
+
+```bash
+smalltalk wake-up ~/Dev/_brain/
+```
+
+Output (~120 tokens):
+
+```st
+# Smalltalk wake-up — 5 current entries
+
+# permanent (core truth)
+RULE: brand | never-change-without-legal-review | hard | stability:permanent
+
+# current
+DECISION: deploy  | railway>vercel | scale | 2026-04
+DECISION: auth    | clerk>auth0    | sdk-simplicity | 2026-02
+PATTERN:  jwt     | broke:auth | cause:missing-exp | fix:add-exp-claim | reuse:y
+WIN:      palace  | score-wing-then-room | 34pct-retrieval-boost | repeat:y
+```
+
+Entries with `ended:` are excluded automatically. Permanent facts load first. Compare to loading raw `_brain/` markdown: 10,000–40,000 tokens.
+
+---
+
+<div align="center">
+  <h2>Knowledge Graph</h2>
+</div>
+
+A temporal entity-relationship graph built entirely from `.st` files. No database. No vector store. Human-readable, git-trackable.
+
+```st
+LINK: kai         | rel:works-on  | nova     | valid_from:2026-03 | stability:transient
+LINK: kai         | rel:works-on  | orion    | valid_from:2026-01 | ended:2026-03
+LINK: auth        | rel:depends   | billing  | stability:stable
+LINK: brand-color | rel:defined-as | indigo  | stability:permanent
+```
+
+History is never deleted. `ended:` closes the fact. The past stays readable.
+
+```bash
+smalltalk kg query _brain/ kai           # active + historical
+smalltalk kg timeline _brain/ kai        # chronological story
+smalltalk kg visualize _brain/           # interactive graph in browser
+```
+
+---
+
+<div align="center">
+  <h2>Palace Navigation</h2>
+</div>
+
+Structures `.st` files into wings, rooms, and tunnels. Agents navigate — they don't scan.
+
+```
+_brain/
+├── _index.st          ← palace map (auto-generated)
+├── decisions.st
+├── patterns.st
+└── projects/
+    ├── nova.st
+    └── auth.st
+```
+
+```bash
+smalltalk palace init _brain/
+```
+
+Navigate with a natural language query:
+
+```bash
+smalltalk navigate _brain/ "auth decisions"
+# → _brain/decisions.st  (score: high)
+# → _brain/projects/auth.st  (score: medium)
+```
+
+34%+ better retrieval than flat-file scanning. `_index.st` session cost: ~150 tokens.
+
+---
+
+<div align="center">
+  <h2>MCP Server — 20 Tools</h2>
+</div>
+
+```bash
+python -m smalltalk.mcp_server
+claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
+```
+
+| Tool | What it does |
+|---|---| 
+| `smalltalk_check` | **Contradiction detection** — catch conflicts before agents act |
+| `smalltalk_kg_invalidate` | Write `ended:` to resolve a contradiction |
+| `smalltalk_wake_up` | Extract L1 context for session start |
+| `smalltalk_route` | Route task to most relevant skill/agent files |
+| `smalltalk_status` | Overview — file count, entries, types |
+| `smalltalk_get_spec` | Full grammar type reference |
+| `smalltalk_list_files` | List .st files with entry counts |
+| `smalltalk_read_file` | Read a .st file |
+| `smalltalk_search` | Keyword search across .st files |
+| `smalltalk_palace_init` | Generate `_index.st` |
+| `smalltalk_palace_index` | Refresh `_index.st` |
+| `smalltalk_navigate` | Load relevant rooms for a domain query |
+| `smalltalk_list_wings` | List palace wings |
+| `smalltalk_list_rooms` | List rooms in a wing |
+| `smalltalk_kg_query` | Entity relationships current or point-in-time |
+| `smalltalk_kg_timeline` | Chronological story of an entity |
+| `smalltalk_kg_visualize` | Interactive KG graph HTML |
+| `smalltalk_diary_write` | Write closing ritual entry |
+| `smalltalk_diary_read` | Read agent diary |
+| `smalltalk_bootstrap_info` | Bootstrap protocol for new projects |
+
+---
+
+<div align="center">
+  <h2>CLI Reference</h2>
+</div>
+
+```bash
+# First time setup — one command
+smalltalk bootstrap <dir>                   # backup → mine → palace init → CLAUDE.md
+smalltalk bootstrap <dir> --api-key <key>
+smalltalk bootstrap <dir> --dry-run         # preview without changes
+
+# Standard workflow
+smalltalk init <dir>                        # scan — see what's convertible
+smalltalk backup <dir>                      # copy originals to .originals/
+smalltalk mine <dir>                        # convert .md to .st
+smalltalk mine <dir> --watch               # auto-convert on file change (Ctrl+C to stop)
+smalltalk mine <dir> --watch --interval 5  # poll every 5s
+smalltalk mine <dir> --dry-run             # preview without converting
+smalltalk mine <dir> --base-url http://... # OpenAI-compatible endpoint (Ollama etc.)
+smalltalk status <dir>                     # conversion progress
+
+# Session start — run in this order
+smalltalk check <dir>                      # ← FIRST: catch contradictions
+smalltalk wake-up <dir>                    # L1 context for system prompt injection
+smalltalk route <dir> "<task>"             # which skills/agents to load for this task
+smalltalk route <dir> "<task>" --top 3
+
+# Contradiction detection + resolution
+smalltalk check <dir>
+smalltalk kg invalidate <file> <line_no>
+smalltalk check <dir>                      # confirm cleared
+
+# Knowledge Graph
+smalltalk kg query <dir> <entity>
+smalltalk kg query <dir> <entity> --as-of YYYY-MM
+smalltalk kg timeline <dir> <entity>
+smalltalk kg visualize <dir>
+
+# Palace
+smalltalk palace init <dir>
+smalltalk palace index <dir>
+smalltalk palace status <dir>
+
+# Diary (closing ritual)
+smalltalk diary write <agent-id> "<entry>"
+smalltalk diary read  <agent-id>
+
+# Git hook — auto-mine on commit
+smalltalk install-hook <dir>               # installs .git/hooks/post-commit
+smalltalk install-hook <dir> --force       # overwrite existing hook
+
+# Instructions (for agents)
+smalltalk instructions <command>           # help | mine | kg | palace | check
+                                           # closing-ritual | bootstrap | route
+```
+
+**Windows / PowerShell:** use full paths, tilde expansion doesn't work.  
+**MCP registration on Windows:**
+
+```powershell
+claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
+# Wrap in quotes — prevents PowerShell parsing dashes as params
+```
+
+**Global CLAUDE.md hook template:**  
+`examples/hooks/CLAUDE.md` — copy to `~/.claude/CLAUDE.md` for automatic session orientation on every project.
+
+---
+
+<div align="center">
+  <h2>Requirements</h2>
+</div>
+
+- Python 3.9+
+- `typer>=0.9.0`, `httpx>=0.27.0`, `rich>=10.11.0`, `mcp>=1.0.0`
+- API key only needed for `mine`. Reading `.st` files needs nothing beyond the agent and the file.
+
+```bash
+pip install smalltalk-cli
+```
+
+---
+
+<div align="center">
+  <h2>Credits</h2>
+</div>
+
+Smalltalk is a direct evolution of the **AAAK dialect** from [MemPalace](https://github.com/MemPalace/mempalace).
+
+MemPalace pioneered the insight that LLMs read structured compressed text natively — no fine-tuning, no decoder, no special API. The AAAK shorthand proved that `DECISION: auth | clerk>auth0 | easier-sdk | 2026-01` is understood as fluently as a paragraph, at 90% fewer tokens. MemPalace also introduced the Palace metaphor (rooms, wings, halls) as a navigation layer for compressed agent memory.
+
+Smalltalk extends this into a full production system:
+- Formal, versioned grammar spec covering all agent file types
+- Temporal Knowledge Graph built entirely from `.st` files
+- Contradiction detection and autonomous resolution cycles
+- MCP server (20 tools) integrating with any modern AI coding tool
+- Full CLI for compression, search, navigation, and visualisation
+- The closing ritual — the write side that closes the PAG loop
+
+If MemPalace is the proof of concept, Smalltalk is the production system.
+
+---
+
+<div align="center">
+  <h2>License</h2>
+</div>
+
+MIT
+
+---
+
+*Smalltalk v3.1.0 — the best context is the context that's already there.*

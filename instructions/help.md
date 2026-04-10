@@ -29,12 +29,11 @@ Compress skill files, memory logs, and agent specs to .st format — 90% fewer t
     smalltalk diary write <id> "<entry>"  Write specialist agent diary entry
     smalltalk diary read <id>             Read agent diary
 
-    smalltalk instructions help             Print this file
-    smalltalk instructions mine             Step-by-step mine guide
-    smalltalk instructions kg              Knowledge Graph guide (LINK, temporal, invalidate)
-    smalltalk instructions palace          Palace navigation guide
-    smalltalk instructions check           Contradiction detection guide
-    smalltalk instructions closing-ritual  The session-end write-back protocol (PAG close loop)
+    smalltalk instructions help       Print this file
+    smalltalk instructions mine       Step-by-step mine guide
+    smalltalk instructions kg         Knowledge Graph guide (LINK, temporal, invalidate)
+    smalltalk instructions palace     Palace navigation guide
+    smalltalk instructions check      Contradiction detection guide
 
 ---
 
