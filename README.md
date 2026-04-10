@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/smalltalk-dark.svg">
-    <img src="docs/smalltalk-light.svg" alt="smalltalk" width="380">
+    <img src="docs/smalltalk-light.svg" alt="smalltalk" width="400">
   </picture>
 
   <h3>The context layer for AI agents.</h3>
