@@ -1,0 +1,18 @@
+# Normalize line endings to LF in git, convert to OS native on checkout
+* text=auto
+
+# Force LF for source files
+*.py text eol=lf
+*.md text eol=lf
+*.st text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.html text eol=lf
+
+# Binary files — never touch
+*.png binary
+*.svg binary
+*.ico binary
+*.pyc binary
