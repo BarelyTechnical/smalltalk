@@ -24,7 +24,7 @@ smalltalk --help
 Or clone for the examples, hooks, and spec:
 
 ```bash
-git clone https://github.com/ApexAutomate/smalltalk.git
+git clone https://github.com/BarelyTechnical/smalltalk.git
 cd smalltalk && pip install -e .
 ```
 
