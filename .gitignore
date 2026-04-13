@@ -4,9 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-dist/
-*.egg-info/
 *.egg
 .eggs/
 
@@ -32,6 +29,12 @@ Thumbs.db
 
 # Smalltalk — local state
 ~/.smalltalk/
+
+# Per-session drift tracker (ephemeral, not tracked in git)
+.smalltalk_session
+
+# Per-run orchestration state (ephemeral, allows crash recovery)
+.smalltalk_orch
 
 # Build artifacts
 dist/

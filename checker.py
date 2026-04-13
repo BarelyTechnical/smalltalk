@@ -69,13 +69,13 @@ _NON_EXCLUSIVE_RELS = frozenset({
 def check_contradictions(
     directory: Path,
     as_of: Optional[str] = None,
-) -> list[dict]:
+) -> dict:
     """
     Scan .st files for contradictions between ACTIVE entries.
 
     Detects two classes of conflict:
 
-      1. Flat-entry contradictions (DECISION / RULE / PATTERN / WIN)
+      1. Flat-entry contradictions (DECISION / RULE / PATTERN / WIN / HABIT / MODELMAP)
          — same subject, conflicting active values.
 
       2. LINK relational overlaps
@@ -90,9 +90,11 @@ def check_contradictions(
         as_of:     YYYY-MM override for 'today' (useful for testing)
 
     Returns:
-        List of conflict dicts with keys:
-            type, subject, conflict_type, values, entries,
-            stability, severity, suggestion, older, newer
+        dict with keys:
+            total         — total number of conflicts
+            contradictions — list of conflict dicts, each with:
+                type, subject, conflict_type, values, entries,
+                stability, severity, suggestion, older, newer
     """
     entries  = parse_st_files(directory)
     conflicts: list[dict] = []
@@ -101,7 +103,7 @@ def check_contradictions(
     # Only consider currently active entries
     active = [e for e in entries if is_currently_valid(e, now)]
 
-    # ── Pass 1: Flat-entry contradictions (DECISION / RULE / PATTERN / WIN) ─
+    # ── Pass 1: Flat-entry contradictions ──────────────────────────────────────
     groups: dict[tuple, list[dict]] = defaultdict(list)
     for e in active:
         groups[(e["type"], e["subject"])].append(e)
@@ -118,7 +120,7 @@ def check_contradictions(
     link_entries = [e for e in active if e["type"] == "LINK"]
     conflicts.extend(_detect_link_overlaps(link_entries, now))
 
-    return conflicts
+    return {"total": len(conflicts), "contradictions": conflicts}
 
 
 def _detect_flat_conflict(
@@ -191,6 +193,37 @@ def _detect_flat_conflict(
                 "subject":       subject,
                 "conflict_type": "repeat-conflict",
                 "values":        sorted(repeat_vals),
+                "entries":       group,
+            }
+
+    # ── HABIT: same subject, enforce:hard in one file, enforce:soft in another ─
+    elif entry_type == "HABIT":
+        enforce_vals = set()
+        for e in group:
+            ev = next((f.strip() for f in e["fields"] if f.strip().startswith("enforce:")), None)
+            if ev:
+                enforce_vals.add(ev)
+        if "enforce:hard" in enforce_vals and "enforce:soft" in enforce_vals:
+            return {
+                "type":          "HABIT",
+                "subject":       subject,
+                "conflict_type": "enforce-level-conflict",
+                "values":        sorted(enforce_vals),
+                "entries":       group,
+            }
+
+    # ── MODELMAP: same task-type routing to different models ─────────────────
+    elif entry_type == "MODELMAP":
+        models = set()
+        for e in group:
+            if e["fields"]:
+                models.add(e["fields"][0].strip())
+        if len(models) > 1:
+            return {
+                "type":          "MODELMAP",
+                "subject":       subject,
+                "conflict_type": "ambiguous-model-routing",
+                "values":        sorted(models),
                 "entries":       group,
             }
 
@@ -308,7 +341,20 @@ def _enrich(conflict: dict, now: str) -> dict:
 # Formatter
 # ---------------------------------------------------------------------------
 
-def format_check_results(conflicts: list[dict], base: Path) -> str:
+def format_check_results(result, base: Path) -> str:
+    """
+    Format contradiction check results for display.
+
+    Accepts either:
+      - dict: {"total": N, "contradictions": [...]}  (new API)
+      - list: [conflict, ...]                         (legacy callers)
+    """
+    # Normalise: accept both dict and list
+    if isinstance(result, dict):
+        conflicts = result.get("contradictions", [])
+    else:
+        conflicts = result  # legacy list
+
     if not conflicts:
         return (
             "OK  No active contradictions detected.\n"

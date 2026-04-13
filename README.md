@@ -4,15 +4,15 @@
     <img src="docs/smalltalk-light.svg" alt="smalltalk" width="400">
   </picture>
 
-  <h3>The context layer for AI agents.</h3>
+  <h3>The intelligence layer for AI agents.</h3>
 
-  <p><em>Context that loads, guides, and compounds.</em></p>
+  <p><em>Structured memory that loads, guides, compounds — and never degrades.</em></p>
 
   <p>
     <a href="https://pypi.org/project/smalltalk-cli"><img src="https://img.shields.io/pypi/v/smalltalk-cli?color=4f46e5&label=pip" alt="PyPI"></a>
     <a href="https://pypi.org/project/smalltalk-cli"><img src="https://img.shields.io/pypi/pyversions/smalltalk-cli?color=4f46e5" alt="Python"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4f46e5" alt="MIT License"></a>
-    <img src="https://img.shields.io/badge/MCP%20tools-20-4f46e5" alt="20 MCP tools">
+    <img src="https://img.shields.io/badge/MCP%20tools-25-4f46e5" alt="25 MCP tools">
     <img src="https://img.shields.io/badge/zero%20infra-plain%20files-4f46e5" alt="zero infrastructure">
   </p>
 
@@ -20,46 +20,68 @@
 
 ---
 
-Every session, your AI agent starts blank.
+## The problem nobody talks about
 
-It doesn't know you chose Railway over Vercel and why. It doesn't know the JWT bug that wasted three days, what pattern fixed it, or that you never want purple in the brand. It figures all of that out from scratch — using your most expensive resource — while you wait.
+Halfway through a chat, your AI forgets what you decided.
 
-That's not a model problem. It's a context problem. Smalltalk is the fix.
+It starts hallucinating. It defaults back to its base training and ignores everything you established in the first few messages. You re-explain the same context. You re-state the same constraints. You correct the same mistakes.
+
+This happens on GPT-4. It happens on Claude. It happens on every local Ollama model you've tried. And it gets worse the longer the session runs.
+
+The industry calls this "context drift." The math is unforgiving:
+
+```
+If each response has a 5% chance of ignoring your established context:
+  After 5  responses  →  77% aligned
+  After 14 responses  →  49% aligned   ← you're below 50%
+  After 30 responses  →  21% aligned   ← the model has effectively forgotten you
+```
+
+**This is not a model intelligence problem. It's an architecture problem.**
+
+The model was never given a reliable, machine-readable source of truth about your world. It's improvising from conversational context that it's also gradually forgetting.
+
+And the people billing you per token have no incentive to fix it — shorter context means more API calls means more revenue.
 
 ---
 
-## The Session Cycle
+## What Smalltalk does
 
-Smalltalk wraps the entire session — not just the start.
+Smalltalk is the context layer that sits between your knowledge and your AI agent. It gives every model — frontier or local — a structured, contradiction-free, compounding brain that persists across every session.
 
 ```
-open session   → agent loads your decisions, rules, patterns, wins
-during work    → agent navigates your knowledge, routes to skills, checks for contradictions
-before risky   → agent runs contradiction detection before deploy or merge
-close session  → agent writes back what it learned
-next session   → starts smarter than the last
+open session   →  agent loads your decisions, rules, patterns, and habits (~2,000 tokens)
+during session →  agent navigates your knowledge, routes by capability, self-corrects on drift
+before risky   →  contradiction detection runs before any deploy or merge
+close session  →  agent writes back what it learned, brain grows smarter
+next session   →  starts further ahead than the last
 ```
 
-No infrastructure. No RAG pipeline. No vector database. Plain files, git-tracked, 20 MCP tools.
+No vector database. No RAG pipeline. No cloud infrastructure. Plain `.st` files, git-tracked, 25 MCP tools, works on any model including local Ollama.
+
+> Anthropic recently shipped "Auto Dream" — their version of automated memory consolidation for Claude.ai. Same architectural insight. Locked to their platform, their cloud, their model. Smalltalk does the same thing on any model, on your machine, in files you own and can inspect. That's not coincidence — it's validation.
 
 ---
 
-## The Format
+## The format
 
-Your knowledge compresses into `.st` — typed, pipe-delimited, one line per fact.
+Every fact in your brain compresses to one line — typed, pipe-delimited, causal.
 
 ```
-DECISION: deploy    | railway>vercel      | scale+cost       | 2026-04
+DECISION: deploy    | railway>vercel      | scale+cost        | 2026-04
 RULE:     brand     | no-purple-gradient  | hard
 PATTERN:  jwt       | broke:auth          | cause:missing-exp | fix:add-exp-claim | reuse:y
+HABIT:    think     | trigger:new-feature | enforce:hard      | plan-before-code
+MODELMAP: code      | qwen2.5-coder:14b   | ollama            | ctx:8192
+BACKEND:  ollama    | api:localhost:11434 | ctx:4096          | tier:beginner
 SKILL:    seo       | when:any-web-build  | stack:schema+meta
 WIN:      palace    | score-wing-room     | 34pct-boost       | repeat:y
-LINK:     kai       | rel:works-on        | nova              | valid_from:2026-03 | stability:transient
+LINK:     kai       | rel:works-on        | nova              | valid_from:2026-03
 ```
 
-Any LLM reads this natively — no fine-tuning, no decoder, no special API. A 200-line skill file becomes 20 lines. A full `_brain/` becomes ~2,000 tokens instead of 40,000.
+Any LLM reads this natively — no fine-tuning, no special API, no decoder. A 200-line skill file becomes 20 lines. A full `_brain/` compresses from ~40,000 tokens to ~2,000.
 
-Full grammar: [`spec/grammar.md`](spec/grammar.md)
+Full grammar → [`spec/grammar.md`](spec/grammar.md)
 
 ---
 
@@ -69,86 +91,78 @@ Full grammar: [`spec/grammar.md`](spec/grammar.md)
 pip install smalltalk-cli
 ```
 
-```bash
-# Register the MCP server (Claude Code)
-claude mcp add smalltalk -- "python -m smalltalk.mcp_server"
-
-# Cursor / Codex / Windsurf
-# {"smalltalk": {"command": "python", "args": ["-m", "smalltalk.mcp_server"]}}
-```
-
-> **Windows / PowerShell:** quotes required — `-- "python -m smalltalk.mcp_server"`
-
-Bootstrap your first project in one command:
+Initialize your first project via the interactive setup wizard:
 
 ```bash
-smalltalk bootstrap ~/Dev/my-project/_brain --api-key YOUR_KEY
-
-# Local Ollama — no API key, no cloud, free
-smalltalk bootstrap ~/Dev/my-project/_brain \
-  --base-url http://localhost:11434/v1 \
-  --api-key ollama --model llama3.1
+smalltalk init
 ```
+
+The wizard will guide you through:
+1. Creating the `_brain/` documentation scaffold
+2. Natively detecting local backends (Ollama, LMStudio, etc.)
+3. Mapping your preferred frontier and local models
+4. Auto-installing background intelligence extraction hooks
+5. Generating IDE integration paths (Claude Code, Cursor, Windsurf, etc.)
+
+For manually configuring Cursor, Windsurf, Continue, Gemini, or Claude Code, see the detailed mapping in **[docs/setup.md](docs/setup.md)**.
 
 ---
 
-## Session Start — Orient
+## How it works — the full loop
 
-Before your first message, the agent loads everything that's true right now:
+### 1. Session start — orient
 
 ```bash
 smalltalk wake-up _brain/
 ```
 
-Output (~120 tokens):
+Loads current truth only — active entries, permanent rules, enforced habits. Superseded decisions (`ended:`) are automatically excluded. This is the context block your agent starts with.
 
 ```
-# Smalltalk wake-up — 5 current entries
+# Smalltalk wake-up — 6 entries
 
-# permanent (core truth)
-RULE: brand | never-change-without-legal-review | hard | stability:permanent
+# enforced habits
+HABIT: think  | trigger:new-feature | enforce:hard | plan-before-code
+HABIT: hunt   | trigger:error+bug   | enforce:hard | find-root-cause-first
 
-# current
+# current decisions
 DECISION: deploy  | railway>vercel | scale   | 2026-04
 DECISION: auth    | clerk>auth0    | sdk      | 2026-02
-PATTERN:  jwt     | broke:auth | cause:missing-exp | fix:add-exp-claim | reuse:y
+PATTERN:  jwt     | broke:auth     | cause:missing-exp | fix:add-exp-claim | reuse:y
 WIN:      palace  | score-wing-room | 34pct-boost | repeat:y
 ```
 
-Entries with `ended:` — superseded decisions, closed facts — are excluded automatically. The agent reads current truth only.
+### 2. During the session — navigate, route, reinforce
 
----
-
-## During Work — Navigate and Route
-
-The agent doesn't scan files looking for context. It navigates.
+The agent navigates your knowledge structure (not keyword search):
 
 ```bash
-# Index your _brain/ once
-smalltalk palace init _brain/
-
-# During the session — find what's relevant
 smalltalk navigate _brain/ "auth decisions"
-# → _brain/decisions.st     (score: high)
+# → _brain/decisions.st     (score: high, hall: DECISION)
 # → _brain/projects/auth.st (score: medium)
 
-# Route a task to the right skill files
-smalltalk route skills/ "build a landing page for a plumbing company"
-# → ui-designer.st  (SKILL triggers: landing-page+demo-build, score: 9)
+smalltalk route skills/ "build a landing page"
+# → ui-designer.st  (SKILL: landing-page+demo-build, score: 9)
 # → seo-expert.st   (USE when: any-web-build, score: 7)
 ```
 
-The agent navigates by structure first, searches by content only when needed. 34%+ better retrieval than flat-file scanning.
+Mid-session drift prevention — runs every N responses, no-op otherwise:
 
----
+```bash
+smalltalk reinforce _brain/
+# → injects compact brain reminder when response count hits threshold
+# → empty return if not yet due (safe to call on every response)
+```
 
-## Before Risky Actions — Check
+Wire it automatically in your `CLAUDE.md` / system prompt:
 
-Every codebase accumulates contradictions. Two decisions pointing different ways. A rule flagged hard in one file, soft in another. A pattern with two different fixes for the same bug.
+```
+TRIGGER: every-response | event:response-complete | then:smalltalk_reinforce
+```
 
-When an agent reads contradictory facts, it picks one arbitrarily.
+### 3. Before risky actions — check
 
-Smalltalk catches this before the agent acts. Rules-based — no LLM required.
+Rules-based contradiction detection. No LLM required. Runs in milliseconds.
 
 ```bash
 smalltalk check _brain/
@@ -157,150 +171,240 @@ smalltalk check _brain/
 ```
 [CONFLICT] Found 1 contradiction(s)  (0 CRITICAL, 1 WARNING)
 
-  1. [WARNING] DECISION: deploy | diverging-choices  stability:stable
-     Values: railway | vercel
+  1. [WARNING] DECISION: deploy | diverging-choices
      decisions.st:3  DECISION: deploy | vercel>railway | cost | 2026-01  << older
      decisions.st:7  DECISION: deploy | railway>vercel | scale | 2026-04  << newer
 
-     Resolution:
-       Close the older entry by adding `ended:2026-04` to line 3.
+     Resolution: smalltalk kg invalidate _brain/decisions.st 3
 ```
 
-One command resolves it:
+When an agent reads contradictory facts, it picks one arbitrarily. Smalltalk catches this before the agent acts.
+
+### 4. Session end — close the loop
 
 ```bash
-smalltalk kg invalidate _brain/decisions.st 3
-# → writes | ended:2026-04 to line 3
-
-smalltalk check _brain/
-# → OK  No active contradictions detected.
+smalltalk session-end _brain/ \
+  --summary "Chose Clerk over Auth0 — SDK simplicity won. JWT was breaking on missing exp claim. Palace scoring gave 34% retrieval improvement."
 ```
 
-Autonomous agents running via MCP execute this full cycle — detect, invalidate, confirm — without human intervention.
+The LLM extracts structured entries, writes them to the brain, checks for contradictions. One command. The brain compounds.
+
+Or wire it automatically:
+
+```
+TRIGGER: session-end | event:task-complete | then:smalltalk_session_end
+```
+
+### 5. Drift detection — per response
+
+Catch when the model drifted from encoded decisions before it compounds:
+
+```bash
+smalltalk eval _brain/ \
+  --task "build the hero section" \
+  --expected "follow design system — purple gradient, Inter font, mobile-first" \
+  --actual "agent used blue, added inline styles, ignored breakpoints"
+```
+
+When drift is detected: writes a corrective `PATTERN` + `RULE` to the brain immediately, returns a reinforce block for injection. The correction is permanent — it won't happen again next session.
 
 ---
 
-## Session End — The Closing Ritual
-
-At session end, the agent writes back what it learned. This is what makes Smalltalk compound.
-
-```bash
-smalltalk diary write reviewer "DECISION: auth | clerk>auth0 | sdk-simplicity | 2026-04"
-smalltalk diary write reviewer "PATTERN: jwt | broke:auth | cause:missing-exp | fix:add-exp-claim | reuse:y"
-smalltalk diary write reviewer "WIN: clerk-setup | one-sdk-all-platforms | repeat:y"
-smalltalk check _brain/
-```
-
-Add this to your `CLAUDE.md` or system prompt to wire it automatically:
+## The compounding effect
 
 ```
-RULE: session-end | write-decisions-patterns-wins-to-brain | hard
-TRIGGER: task-complete | event:session-end | then:smalltalk_diary_write
+Session 1:   agent re-explains your stack, your style, your decisions
+Session 5:   agent starts with 20 patterns from previous mistakes
+Session 20:  agent starts with your full domain history — decisions, wins, what broke and why
+Session 50:  agent operates like a senior engineer who's worked your codebase for years
 ```
 
-The `examples/hooks/CLAUDE.md` template wires this across every project globally.
-
-Without the ritual: every session starts from the same brain.  
-With it: every session compounds. The agent that opens this project next month already knows what you learned today.
-
-Full protocol: `smalltalk instructions closing-ritual`
+Every session that closes properly leaves the brain smarter than before. Mistakes get encoded. Wins get encoded. Drift gets caught and corrected. The brain never degrades — contradictions are resolved explicitly, stale facts are `ended:`.
 
 ---
 
-## The Numbers
+## Active Orchestration (Local Models)
 
-| | Without Smalltalk | With Smalltalk |
-|---|---|---|
-| Session start | agent starts blank | agent starts oriented |
-| Contradictions caught | never — agent picks one | before the agent acts |
-| Context compounds | no | yes — every session writes back |
-| One skill file | ~1,800 tokens | ~180 tokens |
-| Full `_brain/` | ~20,000–50,000 tokens | ~2,000–5,000 tokens |
-| Local 7B/14B on domain work | unreliable | competitive |
-| Requires infrastructure | no (RAG does) | no — plain files |
+The assumption that complex work requires frontier models has one root cause: unoriented models burn intelligence reconstructing your world from scratch every session. Furthermore, local 4B/7B models silently hit context limits (~4K tokens), aggressively truncating memory mid-task. 
 
----
-
-## Local Models
-
-The industry assumes complex work needs frontier models. That assumption has one root cause: unoriented models burn intelligence figuring out your world from scratch. Give a 7B or 14B model the right context upfront, and the gap closes.
+**Smalltalk v4.0 solves this with an active Orchestrator engine.** It wraps around the LLM, breaks tasks down, and manages token budgets. When the context fills up, Smalltalk forcibly extracts a hand-off summary via the LLM, logs a `DECISION` entry to the brain, and systematically resets the context. The model never realizes its memory wiped—allowing infinite-length execution on heavily constrained hardware.
 
 ```bash
-# Everything local — zero API cost
+# Decompose and execute an entire task using local model constraints
+smalltalk orchestrate _brain "build a login system" --task-type code
+
+# Resume an interrupted or crashed execution exactly where it left off
+smalltalk orchestrate _brain "build a login system" --resume
+```
+
+Give a 7B or 14B model a properly structured brain + orchestration, and the gap with frontier models closes.
+
+```bash
+# Detect what inference backend you're running
+smalltalk detect-backends
+
+# Full local stack — zero API cost
 smalltalk bootstrap _brain/ \
   --base-url http://localhost:11434/v1 \
   --api-key ollama --model llama3.1
-
-# Contradiction detection never needs a model — always local
-smalltalk check _brain/
 ```
 
-A well-oriented local 14B model competes with a disoriented frontier model on your domain.
+```
++ Ollama (port 11434)       tier:beginner    ctx:4096    [RUNNING]
+- llama.cpp (port 8080)     tier:standard    ctx:32000   [not found]
+- ik_llama (port 8081)      tier:performance ctx:128000  [not found]
+- bitnet.cpp (port 8082)    tier:cpu-native  ctx:128000  [not found]
+
+WARNING: Only Ollama detected.
+Context cap: Ollama silently caps context at ~4096 on consumer hardware.
+Upgrade: build llama.cpp for full context support.
+```
+
+Contradiction detection never requires a model — always local, always free.
+
+A well-oriented local 14B competes with a disoriented frontier model on your domain.
 
 ---
 
-## MCP Server — 20 Tools
+## Invisible Proxy Architecture (v4.1)
+
+Smalltalk can now act as a completely passive, invisible proxy layer sitting exactly between your IDE (Cursor, Windsurf, etc.) and your local LLM backend.
+
+By pointing your IDE to Smalltalk's proxy server, every outbound prompt is intercepted natively. The brain is resolved, context is injected silently, and the request is transparently forwarded to your model (streaming text natively back to your UI).
+
+```bash
+# Start proxy on localhost:8765
+smalltalk serve _brain/
+```
+In your IDE Settings:  
+- **OpenAI Base URL:** `http://localhost:8765/v1`
+
+**Zero MCP triggers or strict configurations requried.** Every interaction in your codebase perfectly arbs your historical domain knowledge automatically.
+
+---
+
+## Git-Driven Knowledge Extraction (v4.1) 
+
+Skip manually running `smalltalk mine` entirely. Smalltalk acts natively within version control to asynchronously harvest compounding intelligence.
+
+```bash
+# Install passive extraction hook for the current repository
+smalltalk install-hook _brain/
+```
+
+Once installed, **every time you run `git commit`**, an asynchronous background LLM worker is spawned. It silently reviews your `diff`, identifies newly solved bugs/architectural jumps, parses them into `.st` formats, and commits them to your `diary.st`. It doesn't block your terminal response time.
+
+---
+
+## Causal intake — learn from anything
+
+Convert articles, Reddit threads, research papers, and documentation into structured brain entries — capturing not just rules, but the evidence and reasoning behind them:
+
+```bash
+# Standard conversion
+smalltalk mine _brain/ --api-key YOUR_KEY
+
+# Causal mode — extracts WHY, evidence, source, and contradictions
+smalltalk mine _brain/ --api-key YOUR_KEY --causal
+```
+
+Or feed raw text directly via MCP:
+
+```python
+smalltalk_intake(content="<article text>", brain_dir="_brain/")
+# → extracts DECISION/PATTERN/RULE/HABIT entries with evidence:cited | source:article
+```
+
+---
+
+## REST API Server
+
+Smalltalk now ships with a full standard-library REST API for seamless integration with automation platforms like **n8n** and **EvoNexus**, or custom frontend environments without MCP support.
+
+```bash
+smalltalk serve _brain/ --port 8765
+```
+
+Wire into EvoNexus or other agent wrappers via standard HTTP requests to achieve automated context reinforcement:
+```
+TRIGGER: every-response | then:POST http://localhost:8765/reinforce
+```
+
+---
+
+## MCP server — 25 tools
 
 ```bash
 python -m smalltalk.mcp_server
 ```
 
-| Tool | When the agent uses it |
-|---|---|
-| `smalltalk_wake_up` | Session start — load orientation |
-| `smalltalk_navigate` | Mid-session — find relevant files by domain |
-| `smalltalk_route` | Mid-session — match task to skill files |
-| `smalltalk_check` | Before deploy/merge — catch contradictions |
-| `smalltalk_kg_invalidate` | Resolve a contradiction — writes `ended:` |
-| `smalltalk_diary_write` | Session end — closing ritual |
-| `smalltalk_diary_read` | Load accumulated agent expertise |
-| `smalltalk_kg_query` | Entity relationships — current or historical |
-| `smalltalk_kg_timeline` | Chronological story of an entity |
-| `smalltalk_kg_visualize` | Interactive graph as HTML |
-| `smalltalk_search` | Keyword search across .st files |
-| `smalltalk_palace_init` | Index a directory for navigation |
-| `smalltalk_list_wings` | List palace wings |
-| `smalltalk_list_rooms` | List rooms in a wing |
-| `smalltalk_status` | File count, entry count, type breakdown |
-| `smalltalk_get_spec` | Full grammar reference |
-| `smalltalk_list_files` | All .st files with entry counts |
-| `smalltalk_read_file` | Read a .st file |
-| `smalltalk_palace_index` | Refresh index after adding files |
-| `smalltalk_bootstrap_info` | Bootstrap protocol for new projects |
+| Category | Tool | Purpose |
+|---|---|---|
+| **Orientation** | `smalltalk_wake_up` | Session start — load brain context |
+| | `smalltalk_bootstrap_info` | Bootstrap protocol for new projects |
+| **Navigation** | `smalltalk_navigate` | Find relevant files by domain |
+| | `smalltalk_route` | Match task to skill files |
+| | `smalltalk_list_wings` | List palace wings |
+| | `smalltalk_list_rooms` | Rooms in a wing |
+| **Drift prevention** | `smalltalk_reinforce` | Mid-session brain re-injection |
+| | `smalltalk_eval` | Per-response drift detection |
+| | `smalltalk_session_end` | Automated closing ritual |
+| **Contradiction** | `smalltalk_check` | Detect contradictions (no LLM) |
+| | `smalltalk_kg_invalidate` | Resolve — writes `ended:` |
+| **Knowledge graph** | `smalltalk_kg_query` | Entity relationships |
+| | `smalltalk_kg_timeline` | Chronological entity history |
+| | `smalltalk_kg_visualize` | Interactive graph (HTML) |
+| **Memory** | `smalltalk_diary_write` | Write to agent diary |
+| | `smalltalk_diary_read` | Read accumulated expertise |
+| | `smalltalk_intake` | Causal text-to-brain intake |
+| **Infrastructure** | `smalltalk_detect_backends` | Scan local inference backends |
+| **Files** | `smalltalk_search` | Keyword search across .st files |
+| | `smalltalk_status` | File/entry count breakdown |
+| | `smalltalk_get_spec` | Full grammar reference |
+| | `smalltalk_list_files` | All .st files with counts |
+| | `smalltalk_read_file` | Read a .st file |
+| | `smalltalk_palace_init` | Index directory for navigation |
+| | `smalltalk_palace_index` | Refresh index |
 
 ---
 
-## Waza + Smalltalk
+## The numbers
 
-[Waza](https://github.com/tw93/Waza) packages 8 engineering habits — think, hunt, check, design, health, write, learn, read — as Claude Code slash commands, built from 500+ hours across 7 real projects.
-
-The problem: those habits only work in Claude Code. A local Ollama model, Cursor, or Gemini CLI can't use them.
-
-`examples/waza-habits.st` encodes all 8 habits as model-agnostic `.st` entries — 99 entries including routing triggers, RULE enforcement, and real failure PATTERNs from Waza's gotcha tables. Any model reads this at session start and operates with the same discipline.
-
-```bash
-cp examples/waza-habits.st ~/Dev/my-project/_brain/
-smalltalk wake-up _brain/   # habits load alongside project context
-```
-
-Smalltalk gives the model what to know. Waza gives it how to think.
+| | Without Smalltalk | With Smalltalk |
+|---|---|---|
+| Session start | agent starts blank | agent starts oriented |
+| Context drift | compounds every response | caught and corrected automatically |
+| Contradictions | agent picks one arbitrarily | detected before the agent acts |
+| Brain compounds | no — every session resets | yes — every session writes back |
+| One skill file | ~1,800 tokens | ~180 tokens (90% compression) |
+| Full `_brain/` | ~20,000–50,000 tokens | ~2,000–5,000 tokens |
+| Local 7B/14B on domain work | unreliable | competitive with frontier |
+| Infrastructure required | no (RAG does) | no — plain files, git-tracked |
 
 ---
 
-## CLI Reference
+## CLI reference
 
 ```bash
-# Bootstrap (one command)
-smalltalk bootstrap <dir> --api-key <key>
-smalltalk bootstrap <dir> --base-url http://localhost:11434/v1 --api-key ollama
+# Setup
+smalltalk init                               # interactive setup wizard (v4.1)
+smalltalk bootstrap <dir> --api-key <key>    # fast headless setup and markdown conversion
 
-# The session cycle
-smalltalk wake-up <dir>                 # start: load orientation
-smalltalk navigate <dir> "<query>"      # during: find relevant files
-smalltalk route <dir> "<task>"          # during: match task to skills
-smalltalk check <dir>                   # before risky: contradiction check
-smalltalk diary write <id> "<entry>"    # end: closing ritual
-smalltalk diary read <id>               # end: review what was logged
+# Session cycle
+smalltalk wake-up <dir>                      # start: load orientation
+smalltalk navigate <dir> "<query>"           # during: find relevant files
+smalltalk route <dir> "<task>"               # during: match task to skills
+smalltalk reinforce <dir>                    # during: prevent drift (every N responses)
+smalltalk check <dir>                        # before risky: contradiction check
+smalltalk eval <dir> -t "<task>" -e "<expected>" -a "<actual>"   # evaluate response
+smalltalk session-end <dir> -s "<summary>"  # end: automated closing ritual
+smalltalk diary write <id> "<entry>"         # end: manual diary write
+smalltalk diary read <id>                    # end: review logs
+
+# Causal intake
+smalltalk mine <dir> --api-key <key>         # convert .md to .st
+smalltalk mine <dir> --api-key <key> --causal  # extract evidence chains
+smalltalk mine <dir> --watch                 # auto-convert on save
 
 # Knowledge graph
 smalltalk kg query <dir> <entity>
@@ -312,33 +416,38 @@ smalltalk kg visualize <dir>
 smalltalk palace init <dir>
 smalltalk palace index <dir>
 
-# Conversion
-smalltalk init <dir>         # scan — see what's convertible
-smalltalk mine <dir>         # convert .md to .st
-smalltalk mine <dir> --watch # auto-convert on save
-smalltalk status <dir>       # conversion progress
+# Orchestration & Server
+smalltalk orchestrate <dir> "<task>"         # run structured multi-step task
+smalltalk orchestrate <dir> "<task>" --resume # resume a crashed run
+smalltalk serve <dir> --port 8765            # run REST API
 
-# Git hook
-smalltalk install-hook <dir>
+# Hardware
+smalltalk detect-backends
+smalltalk detect-backends --brain <dir>      # write BACKEND entries to brain
+
+# Utilities
+smalltalk scan <dir>         # see what .md files are convertible
+smalltalk status <dir>       # conversion progress
+smalltalk install-hook <dir> # auto-convert on git commit
 ```
 
-Per-tool setup (Claude Code, Cursor, Codex, Windsurf, Antigravity): [docs/setup.md](docs/setup.md)
+Setup for Claude Code, Cursor, Windsurf, Codex, Antigravity → [docs/setup.md](docs/setup.md)
 
 ---
 
 ## Requirements
 
 - Python 3.9+
-- `typer`, `httpx`, `rich`, `mcp` — installed automatically via pip
-- API key only needed for `mine` (conversion). Reading `.st` files costs nothing.
+- `typer`, `httpx`, `rich`, `mcp` — installed automatically
+- API key only needed for `mine` and `session-end`. All detection, navigation, and contradiction checking is local and free.
 
 ---
 
 ## Credits
 
-**[MemPalace](https://github.com/MemPalace/mempalace)** — Smalltalk is a direct evolution of the AAAK dialect from MemPalace, which established that LLMs read structured compressed text natively — no fine-tuning, no decoder, no special API. MemPalace also introduced the Palace metaphor for compressed agent memory navigation.
+**[MemPalace](https://github.com/MemPalace/mempalace)** — Smalltalk evolves the AAAK dialect from MemPalace, which proved that LLMs read structured compressed text natively. MemPalace introduced the Palace metaphor for agent memory navigation.
 
-**[Waza](https://github.com/tw93/Waza)** by [@tw93](https://github.com/tw93) — 8 engineering habits from 500+ real sessions. The `examples/waza-habits.st` encoding brings these habits to any model, any platform. MIT licensed.
+**[Waza](https://github.com/tw93/Waza)** by [@tw93](https://github.com/tw93) — 8 engineering habits from 500+ real sessions. `examples/waza-habits.st` brings these habits to any model, any platform. MIT licensed.
 
 ---
 
@@ -348,4 +457,4 @@ MIT
 
 ---
 
-*Smalltalk v3.1.0 — context that loads, guides, and compounds.*
+*Smalltalk v4.0.0 — the intelligence layer for AI agents.*

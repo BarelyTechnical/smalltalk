@@ -22,8 +22,12 @@ from smalltalk.kg import is_currently_valid, get_stability
 # Excluded intentionally: CLIENT, COMPONENT, PROMPT (reference data — load on demand via REF)
 # Excluded intentionally: SKILL, USE, PHASE, STEP, STACK, CHECK, AVOID (load via route)
 # Excluded intentionally: AGENT, TASK, TRIGGER, OUTPUT, ERROR (operational, not orienting)
-# Result: ~150 tokens of current truth — decisions, hard rules, known patterns, repeatable wins
-WAKE_UP_TYPES = {"DECISION", "RULE", "PATTERN", "WIN"}
+# HABIT enforce:hard — included (mandatory habits the model must follow every session)
+# MODELMAP — included (routing map: which model/backend for which task type)
+# BACKEND — excluded from wake-up (too verbose; loaded via detect-backends on demand)
+# Result: ~150-200 tokens of current truth — decisions, hard rules, patterns, repeatable wins,
+#         mandatory habits, and model routing map
+WAKE_UP_TYPES = {"DECISION", "RULE", "PATTERN", "WIN", "HABIT", "MODELMAP"}
 
 
 def build_wake_up_context(directory: Path, as_of: Optional[str] = None) -> str:
@@ -47,6 +51,8 @@ def build_wake_up_context(directory: Path, as_of: Optional[str] = None) -> str:
 
     selected_permanent: list[str] = []
     selected_standard:  list[str] = []
+    selected_habits:    list[str] = []
+    selected_modelmap:  list[str] = []
 
     for e in entries:
         t = e["type"]
@@ -68,6 +74,18 @@ def build_wake_up_context(directory: Path, as_of: Optional[str] = None) -> str:
             if rv != "repeat:y":
                 continue
 
+        if t == "HABIT":
+            # Only include enforce:hard habits in wake-up
+            enforce = next((f.strip() for f in e["fields"] if f.strip().startswith("enforce:")), "enforce:soft")
+            if enforce != "enforce:hard":
+                continue
+            selected_habits.append(e["raw"])
+            continue
+
+        if t == "MODELMAP":
+            selected_modelmap.append(e["raw"])
+            continue
+
         # Bucket by stability — permanent goes first
         stability = get_stability(e)
         if stability == "permanent":
@@ -75,7 +93,8 @@ def build_wake_up_context(directory: Path, as_of: Optional[str] = None) -> str:
         else:
             selected_standard.append(e["raw"])
 
-    all_selected = selected_permanent + selected_standard
+    all_core     = selected_permanent + selected_standard
+    all_selected = all_core + selected_habits + selected_modelmap
 
     if not all_selected:
         return (
@@ -95,5 +114,15 @@ def build_wake_up_context(directory: Path, as_of: Optional[str] = None) -> str:
     if selected_standard:
         parts.append("# current")
         parts.extend(selected_standard)
+        parts.append("")
+
+    if selected_habits:
+        parts.append("# enforced habits (enforce:hard)")
+        parts.extend(selected_habits)
+        parts.append("")
+
+    if selected_modelmap:
+        parts.append("# model routing")
+        parts.extend(selected_modelmap)
 
     return "\n".join(parts)

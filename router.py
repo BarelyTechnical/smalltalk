@@ -19,17 +19,21 @@ from smalltalk.parser import parse_st_files
 
 
 # Entry types whose fields contribute to routing scores
-_ROUTING_TYPES = {"SKILL", "USE", "AGENT", "TRIGGER", "RULE", "STEP", "PHASE"}
+_ROUTING_TYPES = {"SKILL", "USE", "AGENT", "TRIGGER", "RULE", "STEP", "PHASE",
+                  "HABIT", "MODELMAP", "BACKEND"}
 
 # Boost multipliers per entry type
 _TYPE_WEIGHT = {
-    "SKILL":   3,   # direct skill declaration — highest signal
-    "USE":     3,   # explicit trigger condition
-    "AGENT":   2,   # agent capability declaration
-    "TRIGGER": 2,   # event-based trigger
-    "RULE":    1,
-    "STEP":    1,
-    "PHASE":   1,
+    "SKILL":    3,   # direct skill declaration — highest signal
+    "USE":      3,   # explicit trigger condition
+    "HABIT":    3,   # enforced engineering habit — high signal
+    "AGENT":    2,   # agent capability declaration
+    "TRIGGER":  2,   # event-based trigger
+    "MODELMAP": 2,   # model/backend routing map
+    "BACKEND":  1,   # infrastructure definition
+    "RULE":     1,
+    "STEP":     1,
+    "PHASE":    1,
 }
 
 

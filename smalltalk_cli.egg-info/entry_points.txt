@@ -1,2 +1,3 @@
 [console_scripts]
 smalltalk = smalltalk.cli:main
+smalltalk-serve = smalltalk.server:_serve_entry

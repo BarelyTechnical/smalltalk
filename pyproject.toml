@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smalltalk-cli"
-version = "3.1.0"
-description = "The context layer for AI agents. Structured decisions, contradiction detection, and a compounding PAG loop. 20 MCP tools. Zero infrastructure."
+version = "4.0.0"
+description = "Institutional memory for AI agents. Structured decisions, contradiction detection, per-response drift prevention, and a compounding PAG loop. 25 MCP tools. Zero infrastructure."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
@@ -35,6 +35,7 @@ Issues = "https://github.com/ApexAutomate/smalltalk/issues"
 
 [project.scripts]
 smalltalk = "smalltalk.cli:main"
+smalltalk-serve = "smalltalk.server:_serve_entry"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -59,7 +59,8 @@ def build_viz_data(directory: Path) -> dict:
     Returns dict with keys: nodes, edges, stats, conflicts.
     """
     graph      = build_graph(directory)
-    conflicts  = check_contradictions(directory)
+    result     = check_contradictions(directory)
+    conflicts  = result.get("contradictions", []) if isinstance(result, dict) else result
     today      = _today()
 
     conflict_entities: set[str] = set()

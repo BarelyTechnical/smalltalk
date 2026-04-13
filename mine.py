@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional
-from smalltalk.converter import convert_file, is_convertible, detect_file_type
+from smalltalk.converter import convert_file, convert_file_causal, is_convertible, detect_file_type
 from smalltalk.init_cmd import collect_md_files
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -15,6 +15,7 @@ def run_mine(
     base_url: str,
     keep_originals: bool,
     dry_run: bool,
+    causal: bool = False,
 ):
     if not directory.exists():
         console.print(f"[red]ERROR:[/red] Directory not found: {directory}")
@@ -39,6 +40,8 @@ def run_mine(
     console.print("=" * 60)
     console.print(f"\n  Directory: [bold]{directory}[/bold]")
     console.print(f"  Model:     [bold]{model}[/bold]")
+    if causal:
+        console.print("  Mode:      [bold magenta]CAUSAL[/bold magenta] — extracting evidence chains and causality")
     if dry_run:
         console.print("  Mode:      [yellow]DRY RUN — no files will be written[/yellow]")
     console.print()
@@ -80,7 +83,10 @@ def run_mine(
         ) as progress:
             progress.add_task("converting")
             try:
-                st_content = convert_file(f, api_key, model, base_url)
+                if causal:
+                    st_content = convert_file_causal(f, api_key, model, base_url)
+                else:
+                    st_content = convert_file(f, api_key, model, base_url)
                 st_path = f.with_suffix(".st")
                 st_path.write_text(st_content, encoding="utf-8")
                 md_lines = len(f.read_text(encoding="utf-8").splitlines())

@@ -662,13 +662,293 @@ After bootstrap:
   smalltalk wake-up <dir>          # verify — see what the agent will load
   smalltalk check <dir>            # verify — no contradictions
 
-To add the closing ritual to your agent:
-  Add to CLAUDE.md / GEMINI.md / system prompt:
-    RULE: session-end | write-decisions-patterns-wins-to-brain | hard
-    TRIGGER: task-complete | event:session-end | then:smalltalk_diary_write
+Per-response drift prevention (wire into CLAUDE.md):
+  TRIGGER: every-response | event:response-complete | then:smalltalk_reinforce
+  TRIGGER: session-end    | event:task-complete     | then:smalltalk_session_end
 
 Full protocol: smalltalk instructions closing-ritual
 """
+
+
+# ===========================================================================
+# Per-response drift prevention (Tools #21-24)
+# ===========================================================================
+
+@mcp.tool()
+def smalltalk_reinforce(
+    directory: str,
+    agent_id: str = "default",
+    reinforce_every: int = 5,
+) -> str:
+    """
+    Re-inject brain context to prevent mid-session drift. Safe to call on every response.
+
+    The 0.95^N problem: if each response has a 5% chance of drifting from encoded
+    standards, after 14 responses cumulative alignment drops below 50%. This tool
+    re-injects your compact brain context every N responses (default: 5) to reset
+    the drift clock back toward 1.0.
+
+    Returns:
+      - An empty string (no-op) when reinforcement is not yet due
+      - A compact "[SMALLTALK REINFORCE]" block when due — inject into agent context
+
+    WIRE INTO CLAUDE.md for automatic operation:
+      TRIGGER: every-response | event:response-complete | then:smalltalk_reinforce
+
+    Args:
+        directory:       Brain directory containing .st files
+        agent_id:        Agent ID (used for session tracking)
+        reinforce_every: Reinforce every N responses (default 5)
+    """
+    from smalltalk.session_cmd import run_reinforce
+    d = Path(directory)
+    if not d.exists():
+        return f"ERROR: Directory not found: {directory}"
+    return run_reinforce(d.resolve(), agent_id=agent_id, reinforce_every=reinforce_every)
+
+
+@mcp.tool()
+def smalltalk_session_end(
+    directory: str,
+    session_summary: str,
+    agent_id: str = "default",
+    api_key: str = "",
+    model: str = "anthropic/claude-haiku-4-5",
+    base_url: str = "https://openrouter.ai/api/v1",
+) -> str:
+    """
+    Automated closing ritual — extracts structured entries from session and writes to brain.
+
+    CALL THIS AT THE END OF EVERY SESSION. Not just important sessions — every session.
+    The brain compounds only when the closing ritual runs.
+
+    Workflow:
+      1. LLM extracts DECISION/PATTERN/WIN/ERROR entries from session_summary
+      2. Writes valid entries to agent diary
+      3. Runs contradiction check on brain directory
+      4. Closes the session state tracker
+
+    The more consistently this runs, the smarter the next session starts.
+    After 10 sessions with consistent closing rituals, the model starts each
+    session already knowing your full domain history.
+
+    Args:
+        directory:       Brain directory (.st files live here)
+        session_summary: Free text — what was done, decided, broke, or worked
+        agent_id:        Agent ID for diary writes (default "default")
+        api_key:         OpenAI-compatible API key (uses OPENROUTER_API_KEY env if empty)
+        model:           Model for extraction (default: claude-haiku-4-5)
+        base_url:        API base URL
+    """
+    import io
+    import os
+    from contextlib import redirect_stdout
+    from smalltalk.session_cmd import run_session_end
+
+    d = Path(directory)
+    if not d.exists():
+        return f"ERROR: Directory not found: {directory}"
+
+    key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
+
+    # Capture rich console output as plain text for MCP return
+    buf = io.StringIO()
+    try:
+        run_session_end(
+            brain_dir       = d.resolve(),
+            session_summary = session_summary,
+            agent_id        = agent_id,
+            api_key         = key or None,
+            model           = model,
+            base_url        = base_url,
+        )
+        return f"Session end completed for agent '{agent_id}'. Check brain: {directory}"
+    except Exception as exc:
+        return f"ERROR: {exc}"
+
+
+@mcp.tool()
+def smalltalk_eval(
+    directory: str,
+    task: str,
+    expected_behavior: str,
+    actual_behavior: str,
+    agent_id: str = "default",
+    api_key: str = "",
+    model: str = "anthropic/claude-haiku-4-5",
+    base_url: str = "https://openrouter.ai/api/v1",
+) -> str:
+    """
+    Evaluate an agent response for drift from its encoded brain.
+
+    Compares what the agent did against its active DECISION, RULE, PATTERN, and HABIT
+    entries. If drift is detected, writes corrective PATTERN+RULE entries immediately
+    and returns a reinforce block to inject into the current context.
+
+    The 0.95^N math: if each response drifts 5%, after 14 responses cumulative
+    alignment is below 50%. Call this after important responses to catch drift
+    before it compounds into hallucination or instruction-following failures.
+
+    When drift is detected:
+      - PATTERN entry written to diary immediately (not at session end)
+      - Corrective RULE entry written
+      - Reinforce block returned for immediate context injection
+
+    Args:
+        directory:         Brain directory containing .st files
+        task:              What the agent was asked to do
+        expected_behavior: What should have happened (describe expected output/action)
+        actual_behavior:   What the agent actually did or output
+        agent_id:          Agent ID for diary writes
+        api_key:           API key for drift detection LLM
+        model:             Model to use for drift detection
+        base_url:          API base URL
+    """
+    import os
+    from smalltalk.eval_cmd import EvalCase, run_eval, format_eval_result
+
+    d = Path(directory)
+    if not d.exists():
+        return f"ERROR: Directory not found: {directory}"
+
+    key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
+    if not key:
+        return "ERROR: api_key required for eval. Set OPENROUTER_API_KEY env or pass api_key param."
+
+    case   = EvalCase(task=task, expected=expected_behavior, actual=actual_behavior,
+                      brain_dir=str(d.resolve()), agent_id=agent_id)
+    result = run_eval(case, api_key=key, model=model, base_url=base_url)
+
+    output = format_eval_result(result, verbose=True)
+    if result.reinforce_block:
+        output += "\n" + result.reinforce_block
+    return output
+
+
+@mcp.tool()
+def smalltalk_detect_backends(brain_dir: str = "") -> str:
+    """
+    Detect running local inference backends and return a status report.
+
+    Checks for:
+      - Ollama (port 11434) — beginner tier, context cap ~4096 on consumer hardware
+      - llama.cpp (port 8080) — standard tier, full context support
+      - ik_llama.cpp (port 8081) — performance tier, 128K context
+      - bitnet.cpp (port 8082) — cpu-native tier, 1-bit inference, zero GPU
+
+    Returns a plain-text status report. Warns if only Ollama is found (context cap).
+
+    If brain_dir is provided, writes BACKEND .st entries to that directory.
+
+    Args:
+        brain_dir: Optional brain directory to write BACKEND entries into
+    """
+    from smalltalk.backend_cmd import detect_backends, format_backend_entries, write_backend_entries, _BACKENDS
+
+    detected = detect_backends()
+    lines = ["Smalltalk Backend Detection\n"]
+
+    for b in _BACKENDS:
+        found  = b in detected
+        status = "RUNNING" if found else "not found"
+        lines.append(f"  {'+'if found else '-'} {b['label']:<16} tier:{b['tier']:<14} ctx:{b['ctx']:>7}  [{status}]")
+
+    lines.append("")
+
+    if not detected:
+        lines.append("No backends detected.")
+        lines.append("Install Ollama: https://ollama.ai")
+        lines.append("Build llama.cpp: https://github.com/ggerganov/llama.cpp")
+        lines.append("Build bitnet.cpp: https://github.com/microsoft/BitNet")
+    else:
+        detected_ids = {b["id"] for b in detected}
+        if detected_ids == {"ollama-local"}:
+            lines.append("WARNING: Only Ollama detected.")
+            lines.append("Context cap: Ollama silently caps context at ~4096 on consumer hardware.")
+            lines.append("Upgrade: build llama.cpp (standard) or bitnet.cpp (cpu-native) for full context support.")
+        else:
+            best = max(detected, key=lambda b: b["ctx"])
+            lines.append(f"Best available: {best['label']} ({best['ctx']:,} ctx, tier:{best['tier']})")
+
+        lines.append("")
+        lines.append("BACKEND entries:")
+        lines.append(format_backend_entries(detected))
+
+    if brain_dir and detected:
+        d = Path(brain_dir)
+        if d.exists():
+            out = write_backend_entries(d, detected)
+            lines.append(f"\nWritten: {out}")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def smalltalk_intake(
+    content: str,
+    brain_dir: str = "",
+    agent_id: str = "default",
+    api_key: str = "",
+    model: str = "anthropic/claude-haiku-4-5",
+    base_url: str = "https://openrouter.ai/api/v1",
+) -> str:
+    """
+    Intake raw content (article, thread, post, guide) and extract causality-aware .st entries.
+
+    Unlike mine (which works on files), intake takes raw text directly.
+    Unlike standard conversion, causal intake extracts:
+      - The WHY behind every rule (not just the rule itself)
+      - Evidence confidence (evidence:cited | evidence:anecdotal | evidence:inferred)
+      - Source references (source:ahrefs-study, source:twitter-thread)
+      - Contradiction flags (# CONFLICT: if content contradicts likely existing knowledge)
+
+    Use this to feed articles, Reddit threads, HN posts, documentation into your brain.
+    The entries are written to agent diary if brain_dir is provided.
+
+    Args:
+        content:   Raw text to analyse (article body, thread, guide, etc.)
+        brain_dir: Optional — if provided, write extracted entries to agent diary
+        agent_id:  Agent ID for diary writes
+        api_key:   API key
+        model:     Model for extraction
+        base_url:  API base URL
+    """
+    import os
+    from smalltalk.converter import convert_text_causal
+
+    key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
+    if not key:
+        return "ERROR: api_key required. Set OPENROUTER_API_KEY or pass api_key param."
+
+    try:
+        result = convert_text_causal(content, key, model, base_url)
+    except Exception as exc:
+        return f"ERROR: {exc}"
+
+    # Write to diary if brain_dir provided
+    written = []
+    if brain_dir:
+        d = Path(brain_dir)
+        if d.exists():
+            valid_types = {
+                "DECISION:", "PATTERN:", "WIN:", "RULE:", "HABIT:",
+                "LINK:", "MODELMAP:", "BACKEND:", "ERROR:",
+            }
+            for line in result.splitlines():
+                line = line.strip()
+                if line and any(line.startswith(t) for t in valid_types):
+                    try:
+                        from smalltalk.diary import diary_write as _dw
+                        _dw(agent_id, line)
+                        written.append(line)
+                    except Exception:
+                        pass
+
+    output = f"Intake complete — {len(result.splitlines())} entries extracted"
+    if written:
+        output += f", {len(written)} written to diary ({agent_id})"
+    output += "\n\n" + result
+    return output
 
 
 # ===========================================================================

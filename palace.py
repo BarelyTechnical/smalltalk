@@ -341,8 +341,17 @@ def list_wings(directory: Path) -> list[dict]:
     return result
 
 
-def list_rooms(directory: Path, wing_id: str = "") -> list[dict]:
-    """List rooms in the palace, optionally filtered by wing."""
+def list_rooms(directory: Path, wing_id: str = "", wing: str = "") -> list[dict]:
+    """List rooms in the palace, optionally filtered by wing.
+
+    Args:
+        directory: Palace root directory
+        wing_id:   Filter by wing ID (positional-friendly name)
+        wing:      Alias for wing_id (keyword-friendly name)
+    """
+    # Accept either wing= or wing_id= — wing= takes precedence
+    filter_wing = wing or wing_id
+
     index_path = directory / "_index.st"
     if not index_path.exists():
         return []
@@ -352,12 +361,12 @@ def list_rooms(directory: Path, wing_id: str = "") -> list[dict]:
     for e in entries:
         if e["type"] != "ROOM":
             continue
-        wing     = next((f[5:] for f in e["fields"] if f.startswith("wing:")),  "")
+        w        = next((f[5:] for f in e["fields"] if f.startswith("wing:")),  "")
         file_rel = next((f[5:] for f in e["fields"] if f.startswith("file:")),  "")
         hall     = next((f[5:] for f in e["fields"] if f.startswith("hall:")),  "")
-        if wing_id and wing != wing_id:
+        if filter_wing and w != filter_wing:
             continue
-        result.append({"id": e["subject"], "wing": wing, "hall": hall, "file": file_rel})
+        result.append({"id": e["subject"], "wing": w, "hall": hall, "file": file_rel})
     return result
 
 
