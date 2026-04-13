@@ -35,10 +35,10 @@ The standard solution is RAG or a Vector Database. But RAG is probabilistic and 
 Smalltalk sits between your knowledge and your agent. It gives every model a structured, contradiction-free memory that persists across sessions and is aggressively maintained *per-response*.
 
 It achieves this through:
-1. **The Invisible Proxy**: Intercepts IDE traffic to reinject compressed rules into the system prompt on *every single request*.
+1. **The Invisible Proxy**: Intercepts `POST /v1/chat/completions` IDE traffic. It dynamically appends the compiled brain rules to the bottom of the system block. Because the injection is highly compressed (e.g., 40k tokens → 2k tokens), it cleanly rides alongside your IDE's hidden prompts without blowing out the model's context window.
 2. **Git-Driven Harvesting**: Asynchronous git hooks analyze your commits to extract decisions and habits without manual entry.
 3. **Active Orchestration**: Local agents get their context actively supervised, automatically summarizing and flushing tokens before models silently truncate memory.
-4. **Deterministic Validation**: Non-LLM contradiction loops ensure the AI physically cannot overwrite a hard rule.
+4. **Deterministic Validation**: Non-LLM contradiction loops act as a strict firewall for your memory graph. The proxy cannot force the model to output perfect code, but when the AI attempts to log a decision or learn a new rule, Smalltalk's deterministic checks prevent conflicting facts from entering the `.st` files. Drift happens in the chat, but it can never infect the long-term memory.
 
 There is no vector database, no RAG pipeline, and no cloud infrastructure. It uses deeply compressed, pipe-delimited `.st` files that are git-tracked. It gives you 25 MCP tools and works completely offline with local Ollama models.
 
@@ -46,8 +46,12 @@ There is no vector database, no RAG pipeline, and no cloud infrastructure. It us
 
 ## The Format
 
-Smalltalk is built on the AAAK grammar (from MemPalace). Every fact, rule, or architectural decision in your project compresses into one single typed, pipe-delimited line.
+Smalltalk is built on the AAAK grammar (from MemPalace). Every fact, rule, or architectural decision compresses into one single typed, pipe-delimited line. 
 
+Instead of a 4,000 token markdown document that says:
+> *"When building the frontend, ensure that we use Vercel for deployment. The brand guidelines dictate that we strictly avoid using purple gradients... If you are handling authentication and encounter a JWT auth break, it's usually because of the missing expiration claim. Fix it by adding the exp claim back. Always reuse the auth utility..."*
+
+It becomes a 24 token `.st` block:
 ```st
 DECISION: deploy    | railway>vercel      | scale+cost        | 2026-04
 RULE:     brand     | no-purple-gradient  | hard
@@ -97,7 +101,10 @@ Then, point your IDE's OpenAI Base URL to `http://localhost:8765/v1`.
 
 Smalltalk acts as a transparent, passive interceptor. Every time you hit enter in your IDE, the proxy catches the outbound `POST /v1/chat/completions` request. It resolves the brain, aggressively injects your highly compressed `.st` rules into the system block, and forwards the prompt. 
 
-By reinforcing the context on **every single request**, the model physically cannot drift. Your rules are re-asserted right before the agent generates its next token. *(Note: This server also acts as a native REST API for integrations with automation platforms like n8n or EvoNexus).*
+![Smalltalk Proxy Architecture In Action](docs/demo.gif)
+*Demo: Watch the proxy silently compile and prepend the brain on every generated response.*
+
+By reinforcing the context on **every single request**, the model is forcefully realigned before generating its next token. *(Note: This server also acts as a native REST API for integrations with automation platforms like n8n or EvoNexus).*
 
 ### 2. Active Orchestration
 *For constrained local AI execution (4B to 14B models)*
